@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/roadpilot-map",
+    "crates/roadpilot-map-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+repository = "https://github.com/RoadPilotHQ/RoadPilot-Map"
+# No license has been chosen yet (see docs/open-questions.md, L4).
+# Publishing stays disabled until it is.
+publish = false
+
+[workspace.dependencies]
+roadpilot-map = { path = "crates/roadpilot-map", version = "0.1.0" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

@@ -8,9 +8,9 @@ Each step is small, independently verifiable and committed separately.
 
 | # | Step | Verification | Status |
 |---|---|---|---|
-| 1 | Commit the pending `.gitignore` that protects local files. | Workflow script status shows a clean working tree. | Pending |
+| 1 | Commit the pending `.gitignore` that protects local files. | Workflow script status shows a clean working tree. | Done |
 | 2 | Add the initial architecture documentation and ADR 0001 in `docs/`, and link it from the root README. | Review of the documents. | Done |
-| 3 | Create the Cargo workspace skeleton with the `roadpilot-map` facade library and the `roadpilot-map-cli` binary. The CLI supports `--version`. Add one unit test. | `cargo build` and `cargo test` pass. | Planned |
+| 3 | Create the Cargo workspace skeleton with the `roadpilot-map` facade library and the `roadpilot-map-cli` binary. The CLI supports `--version`. Add one unit test. | `cargo build` and `cargo test` pass. | Done |
 | 4 | Pin the toolchain in `rust-toolchain.toml` and add `rustfmt` and `clippy` configuration. | `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` pass. | Planned |
 | 5 | Add a `cargo-deny` configuration with a dependency license allow list and advisory checks. | `cargo deny check` passes. | Planned |
 | 6 | Register the build, test, format, lint and deny checks with the local Git workflow, and optionally add GitHub Actions CI. | The checks run before every commit; CI is green if added. | Planned |

@@ -1,0 +1,14 @@
+[package]
+name = "roadpilot-map"
+description = "Facade library for RoadPilot-Map: lane-level map data from local ATS and ETS2 installations."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "roadpilot_map"
+
+[lints]
+workspace = true

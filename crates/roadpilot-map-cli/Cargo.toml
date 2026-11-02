@@ -1,0 +1,18 @@
+[package]
+name = "roadpilot-map-cli"
+description = "Command-line interface for RoadPilot-Map."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "roadpilot-map"
+path = "src/main.rs"
+
+[dependencies]
+roadpilot-map.workspace = true
+
+[lints]
+workspace = true
