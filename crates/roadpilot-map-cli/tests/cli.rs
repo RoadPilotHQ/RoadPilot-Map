@@ -17,7 +17,10 @@ fn expected_version_line() -> String {
 fn long_version_flag_prints_version_and_succeeds() {
     let output = run(&["--version"]);
     assert_eq!(output.status.code(), Some(0));
-    assert_eq!(String::from_utf8_lossy(&output.stdout), expected_version_line());
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        expected_version_line()
+    );
     assert!(output.stderr.is_empty());
 }
 
@@ -25,7 +28,10 @@ fn long_version_flag_prints_version_and_succeeds() {
 fn short_version_flag_prints_version_and_succeeds() {
     let output = run(&["-V"]);
     assert_eq!(output.status.code(), Some(0));
-    assert_eq!(String::from_utf8_lossy(&output.stdout), expected_version_line());
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        expected_version_line()
+    );
     assert!(output.stderr.is_empty());
 }
 

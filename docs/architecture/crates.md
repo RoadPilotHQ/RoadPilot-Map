@@ -66,12 +66,15 @@ The split into these crates is a starting point. If a boundary turns out to add 
 
 ## Conventions
 
-These conventions are proposed and take effect with the workspace setup in Phase 0 (steps 3 and 4).
+These conventions are in effect since Phase 0 (steps 3 and 4). The error-handling crates are added when the first fallible API needs them.
 
 - **Naming:** crate names use the `roadpilot-map-` prefix in kebab-case. The Rust names are `roadpilot_map_*`.
 - **Edition:** Rust 2024.
+- **Toolchain:** development uses the stable toolchain pinned in `rust-toolchain.toml`. The minimum supported Rust version is set by `rust-version` in the workspace `Cargo.toml`. Clippy checks code against that minimum.
+- **Formatting:** `rustfmt` with the stable options in `rustfmt.toml`. `cargo fmt --all --check` must pass.
+- **Linting:** Clippy's default lints plus the workspace lints in `Cargo.toml`. `cargo clippy --workspace --all-targets -- -D warnings` must pass.
 - **Errors:** library crates define typed errors with `thiserror`. Only the CLI uses `anyhow`.
-- **Panics:** library code must not panic on malformed input. `unwrap` and `expect` are allowed only where an invariant is proven, and the reason is stated in the message.
-- **Unsafe code:** `#![forbid(unsafe_code)]` by default. Any exception needs an ADR.
+- **Panics:** library code must not panic on malformed input. `unwrap` is rejected by Clippy. `expect` is allowed only where an invariant is proven, and the reason is stated in the message.
+- **Unsafe code:** forbidden for all crates by the workspace lint `unsafe_code = "forbid"`. Any exception needs an ADR.
 - **Dependencies:** kept minimal. Their licenses are checked with `cargo-deny` so the later license choice stays open.
 - **Publishing:** crates are not published to crates.io until the license is decided.

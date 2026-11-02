@@ -1,0 +1,12 @@
+# Development toolchain for RoadPilot-Map.
+#
+# This pins the compiler used for development and checks. It is separate from
+# the minimum supported Rust version (`rust-version` in Cargo.toml), which is
+# the oldest compiler the code must still build with.
+#
+# No `targets` are listed: rustup always installs the host target, for example
+# x86_64-pc-windows-msvc on Windows or x86_64-unknown-linux-gnu on Linux.
+[toolchain]
+channel = "1.97.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

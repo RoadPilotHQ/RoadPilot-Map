@@ -1,0 +1,5 @@
+# Formatting policy for RoadPilot-Map. Stable options only.
+#
+# Everything else uses the rustfmt defaults. Line endings are left to Git.
+edition = "2024"
+style_edition = "2024"
