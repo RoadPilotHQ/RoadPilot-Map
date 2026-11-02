@@ -4,6 +4,8 @@ RoadPilot-Map is the planned map processing and geographic data infrastructure o
 
 > **Status: early planning.** This repository does not contain source code yet. Responsibilities, architecture and roadmap below describe the **planned** scope, not existing functionality.
 
+Architecture documentation, decision records and open questions are in [`docs/`](docs/README.md).
+
 ## Purpose
 
 This repository is meant to turn ETS2 and ATS map data into structured, versioned road information (geometry, lanes, curvature and road networks) that other RoadPilot components can use. It is kept separate so that map processing can evolve and be released independently of the desktop application.
