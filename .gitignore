@@ -1,0 +1,4 @@
+# Local Claude Code files - never commit (managed by roadpilot-git)
+CLAUDE.md
+CLAUDE.local.md
+.claude/settings.local.json
