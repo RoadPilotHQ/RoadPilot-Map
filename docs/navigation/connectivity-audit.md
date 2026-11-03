@@ -17,7 +17,7 @@ Every finding has one of these classifications:
 | Finding | Classification |
 |---|---|
 | The graph is built as designed. Counts, edge endpoints and the route search were verified independently. | No bug found |
-| Roads without a usable traffic side (14.3 % of ETS2 roads, 11.3 % of ATS roads) are not in the graph. They cut the road network into pieces. | Source data (country IDs absent); what the game does there is not understood |
+| Roads with an unknown traffic side (36,418 ETS2 roads = 14.4 %, 25,853 ATS roads = 11.5 %; of these 35,948 and 25,280 name no country) are not in the graph. They cut the road network into pieces. See [the road counts](#road-counts-and-their-definitions). | Source data (country IDs absent); what the game does there is not understood |
 | Directly joined prefabs have only `Unknown` edges. About 13,500 (ETS2) and 16,200 (ATS) such joints split the network further. | Interpretation (PJ4) |
 | Roads that end at nothing and prefab nodes with nothing attached end routes. | Expected |
 | Lane count mismatches at prefab arms, unresolved prefab instances, lane count differences between roads | Interpretation / not understood, small |
@@ -173,7 +173,24 @@ The item type behind `NodeLinksToOtherItem`: **no road end and no prefab node is
 | Traffic side unknown: different countries | 470 | 546 |
 | Traffic side unknown: other (look conflict, country not defined) | 0 | 27 |
 
-- Roads without a country are **spread over the whole map**. In every populated area of a 6 × 6 grid, between roughly 2 % and 30 % of the roads have no country. They are not one region. Their country bytes are simply zero. What the game does for them is not known (open question in the [lane model](../formats/scs-lane-model.md#open-questions)).
+### Road counts and their definitions
+
+Several documents and reports give a number of "roads without a traffic side". The numbers differ because they count different things. The three definitions below are exact, and the figures are reproduced for the current installations (road records of the sector files, the lane model of Step 4B; lanes are resolved for every road in both games).
+
+| ID | Definition | ETS2 | ATS |
+|---|---|---|---|
+| R0 | All roads | 252,127 | 224,868 |
+| R1 | **Nodes name no country**: the traffic side is unknown because neither node of the road has a country ID (`NoCountry`) | 35,948 (14.3 %) | 25,280 (11.2 %) |
+| R2 | **Unknown traffic side for any reason**: R1, plus nodes that name different countries (`CountryMismatch`), plus a road look that contradicts the country (`LookConflict`), plus a country that is not defined (`UnknownCountry`) | 36,418 (14.4 %) = 35,948 + 470 | 25,853 (11.5 %) = 25,280 + 546 + 14 + 13 |
+| R3 | **No lane node in the graph**: R2, plus roads with resolved lanes but zero lanes | 46,511 (18.4 %) = 36,418 + 10,093 | 25,861 (11.5 %) = 25,853 + 8 |
+
+- **R2 is the number of `road_lanes_not_navigable` issues** in the graph and in the export (36,418 and 25,853). It is the authoritative count of "roads that are not in the graph because their traffic side is unknown". The export limitation `roads_without_known_traffic_side_are_not_exported` refers to R2.
+- **R1 is the number of the Step 6.1 report** (35,948 and 25,280) and of open question NV7 ("name no country"). It is a part of R2, not a different measurement.
+- **R3** is the number of roads that have no node in the graph. The zero-lane roads (10,093 and 8) are not listed as issues, because they have no lanes to export.
+- **Why the reports differ.** The Step 6.1 report counted R1. The Step 7 report counted R2 (it took the number from the export, which counts every road the graph could not use). The difference is exactly the other reasons: 470 in ETS2, and 546 + 14 + 13 = 573 in ATS. Both were measured on the same installations; no input data, filter or code differed. The Step 6.1 audit tool was run again for this review and reproduces R0, R1 and the breakdown of R2 above for both games. The R2 counts are the `road_lanes_not_navigable` counts that the Step 7 export wrote and checked for both games. The first version of the summary table of this audit said "14.3 % and 11.3 %" for "roads without a usable traffic side". Those percentages are R1, not R2, and the ATS value came from the previous ATS version (25,307 roads in the Step 4B figures, before the ATS update; the current R1 is 11.2 %). It is corrected above.
+- The Step 4B lane model document lists R1 for ATS as 25,307. That is the previous ATS version, as stated there; the current value is 25,280.
+
+- Roads that name no country (R1) are **spread over the whole map**. In every populated area of a 6 × 6 grid, between roughly 2 % and 30 % of the roads have no country. They are not one region. Their country bytes are simply zero. What the game does for them is not known (open question in the [lane model](../formats/scs-lane-model.md#open-questions)).
 - Zero-lane roads in ETS2 are dominated by a few road looks (17 looks; one look has 8,960 roads). ATS has 8. They have no effect on connectivity (stage S1b above).
 - Prefab slots give independent hints for these roads (section 9): where they can be tested, the road lanes follow the pattern "right side forward" in all 218 ETS2 arms and in 650 of 654 ATS arms. This is an observation, not a rule, and the graph does not use it.
 
@@ -206,7 +223,7 @@ The evidence is strong but not conclusive:
 
 1. It covers only roads attached to prefabs, and only roads whose sides differ in lane count. Symmetric roads cannot discriminate, and roads that touch no prefab are not tested at all.
 2. The exceptions (about 0.02–0.04 %) are not explained, and some of them contradict the rule on every arm of a prefab.
-3. 14 % of the roads have no traffic side, so the rule does not apply to them (LM4, LM5).
+3. 14.4 % (ETS2) and 11.5 % (ATS) of the roads have no known traffic side (R2 below), so the rule does not apply to them (LM4, LM5).
 4. The rule is a rule of the model, not a stored field.
 
 **`Candidate` remains justified.** What is missing for `Confirmed`: an explanation of the contradicting prefabs, a source that states the direction (or a confirmed meaning of the country bytes, LM4), and a decision about roads without country.
@@ -221,7 +238,7 @@ None. Evidence: node and edge counts agree with the models; all edge endpoints a
 
 ### Source-data limitations
 
-- **Roads without a country** (35,948 ETS2, 25,280 ATS, plus 470 and 546 with different countries). They are not in the graph. This is the largest single reason for the small components (section 4, stage S1a).
+- **Roads with an unknown traffic side** (R2: 36,418 ETS2, 25,853 ATS; of these 35,948 and 25,280 name no country, R1). They are not in the graph. This is the largest single reason for the small components (section 4, stage S1a).
 - Unresolved UIDs at node links: 29 road ends and 12 prefab nodes in ETS2, 8 and 1 in ATS.
 
 ### Unconfirmed interpretation of the format

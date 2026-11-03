@@ -43,7 +43,7 @@ An edge is a directed connection with a **status** and an **origin** (a record k
 
 ### Why each status
 
-- **Confirmed, internal prefab movements.** The slot assignments and the next/previous curve links are stored explicitly in the prefab descriptor ([SCS prefabs and junctions](../formats/scs-prefab-junctions.md#internal-lanes-and-movements)). Only the movement inside the prefab is confirmed. Traffic rules stored with it are kept as references and do not change its status.
+- **Confirmed, internal prefab movements.** The slot assignments and the next/previous curve links are stored explicitly in the prefab descriptor ([SCS prefabs and junctions](../formats/scs-prefab-junctions.md#internal-lanes-and-movements)): a chain of stored curves leads from an input slot to an output slot. Only this stored movement inside the prefab is confirmed. Traffic rules stored with it are kept as references and do not change its status. The attachment of the slots to map nodes uses the node mapping of the prefab instance (origin byte, checked against the node distances; a few exceptions are unexplained, PJ2, NV8). `Confirmed` is a statement about the evidence for the connection. It says nothing about routing eligibility or about the drivability of a route; see [What `confirmed` means](navigation-export.md#what-confirmed-means).
 - **Candidate, driving along a lane.** The lanes of a road are known, but the **driving direction** comes from the traffic-side rule, which is measured (about 98 %) and not confirmed ([SCS lane model](../formats/scs-lane-model.md#driving-direction), LM4, LM5). A route must not call a direction confirmed because of a rule that is only measured. This is the one place where the status is a judgement call; it is a single line in `NavigationGraph::build` (NV1).
 - **Candidate, road lane to lane at a road connection.** The road connection is confirmed, but the pairing of lanes is by index, and the index order is unknown (LM2, LM6).
 - **Candidate, road lane to prefab slot.** The same index pairing (LM2). The count match of lanes and slots (98.6 %) supports it but does not confirm the order.
@@ -159,7 +159,7 @@ Issues:
 
 | Issue | ETS2 | ATS |
 |---|---|---|
-| `RoadLanesNotNavigable` | 36,418 | 25,853 |
+| `RoadLanesNotNavigable` (R2: traffic side unknown for any reason) | 36,418 | 25,853 |
 | `RoadTransitionUnpaired` | 28,312 | 19,758 |
 | `PrefabArmUnpaired` | 11,622 | 11,542 |
 | `PrefabUnresolved` | 860 | 1,030 |
@@ -200,5 +200,5 @@ The earlier questions G1–G5, LM1–LM6 and PJ1–PJ8 are unchanged; see [SCS r
 | NV4 | Where positions come from for start and goal (a spatial index with a defined matching rule). No proximity matching is done today. |
 | NV5 | Answered in the [connectivity audit](connectivity-audit.md): no road end and no prefab node links to such an item, so they do not affect connectivity. |
 | NV6 | Whether and how traffic rules and signals restrict a movement (PJ1, PJ5). |
-| NV7 | How the game assigns a traffic side to the 14 % of roads whose nodes name no country (35,948 in ETS2, 25,280 in ATS). They are not in the graph and cut the network into pieces. |
+| NV7 | How the game assigns a traffic side to the roads whose nodes name no country (R1: 35,948 in ETS2, 25,280 in ATS). Together with the roads whose nodes name different countries and the few other cases, 36,418 and 25,853 roads (R2) have no known traffic side. They are not in the graph and cut the network into pieces. See [the road counts](connectivity-audit.md#road-counts-and-their-definitions). |
 | NV8 | Whether the contradicting prefabs of the NV1 test (8 in ETS2, 25 in ATS) show an error in the node mapping or an exception of the direction rule. |

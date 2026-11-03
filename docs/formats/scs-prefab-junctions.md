@@ -212,6 +212,8 @@ Larger junctions are made of several prefabs joined node to node. Lane transitio
 
 The road-to-road lane transitions of Step 4B (`LaneNetwork::transition`) are unchanged: index candidates at shared road nodes.
 
+The table describes the evidence for each kind of fact in the data model. The status of an *edge* of the navigation graph is defined in [Navigation graph](../navigation/navigation-graph.md#why-each-status) and [Navigation graph export](../navigation/navigation-export.md#what-confirmed-means): only the internal movements are `confirmed` edges. A confirmed fact in this table never makes a route confirmed or drivable.
+
 ## Traffic attributes
 
 | Attribute | Source | Model |

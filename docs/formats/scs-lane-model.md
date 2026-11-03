@@ -169,6 +169,6 @@ The structure is identical. Differences are in the data only: ETS2 has one left-
 | LM4 | Which of the two node country bytes belongs to which side of the node. |
 | LM5 | The effect of a look's `lane_direction` when it contradicts the country. |
 | LM6 | Real lane continuity across road connections (lane drops, merges, index order). Junction lanes are read from `.ppd` since Step 5; lane continuity at prefab arms with a lane count mismatch is PJ8. |
-| — | Roads without a country (14.3 % in ETS2, 11.3 % in ATS): which traffic side applies there. They are spread over the whole map and are the largest single reason for the small connected pieces of the navigation graph ([connectivity audit](../navigation/connectivity-audit.md), NV7). |
+| — | Roads whose nodes name no country (R1: 14.3 % in ETS2; 11.3 % in ATS in the previous version, 11.2 % now): which traffic side applies there. With the roads whose nodes name different countries and a few ATS exceptions, 36,418 ETS2 and 25,853 ATS roads have no known traffic side (R2, see [the road counts](../navigation/connectivity-audit.md#road-counts-and-their-definitions)). They are spread over the whole map and are the largest single reason for the small connected pieces of the navigation graph ([connectivity audit](../navigation/connectivity-audit.md), NV7). |
 
 Geometry questions (G1 and following) are in [SCS road geometry](scs-road-geometry.md).

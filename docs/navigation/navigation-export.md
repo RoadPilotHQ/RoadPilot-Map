@@ -166,27 +166,49 @@ Stability scope: the exported node and edge ids depend on the order of the graph
 
 ### Topology, confidence, routing, routes
 
-These four things are different, and the file contains only the first two:
+These four things are different. The file contains only the first two:
 
-| Concept | Meaning | In the file |
-|---|---|---|
-| **Topology** | Which nodes and edges exist | `node`, `edge` records |
-| **Confidence** | How well the game data supports an edge | `status` |
-| **Routing eligibility** | Which edges a route search may use | **Not in the file.** It is a decision of the program that searches routes. RoadPilot-Map allows `confirmed` edges in `ConfirmedOnly` mode and `confirmed` plus `candidate` edges in `AllowCandidates` mode, and never `unknown` or `forbidden` ones |
-| **Route** | A path | **Not in the file.** No route, no cost, no ETA is exported |
+| Level | Question | In the file | Who decides |
+|---|---|---|---|
+| **1. Topology** | Does this edge exist in the exported graph? | `node` and `edge` records | The graph builder |
+| **2. Connection confidence** | How well does the game data support this edge? | `status` | The graph builder, from the evidence in the data |
+| **3. Routing eligibility** | May a route search use this edge? | **Not in the file** | The program that searches routes. RoadPilot-Map's current policy: `ConfirmedOnly` uses `confirmed` edges; `AllowCandidates` uses `confirmed` and `candidate` edges; `unknown` and `forbidden` edges are never used. Another consumer, or a later version, may decide differently (for example once traffic rules are interpreted) |
+| **4. Route validity** | Can the whole route be driven in the game? | **Not in the file** | Nobody has established this. No status, and no combination of statuses, proves it. No route, cost or ETA is exported |
 
-An edge in the file is not necessarily routable. A consumer must not treat all edges as drivable.
+An edge in the file is not necessarily routable, and a routable edge is not necessarily drivable. A consumer must not treat all edges as drivable, and must not treat a path of exported edges as a validated route.
 
 ### Status
 
 | Status | Meaning |
 |---|---|
-| `confirmed` | Stored explicitly in the game data. In this version: the movements inside a prefab. This does **not** mean the movement may be driven: traffic rules and signals are not evaluated |
+| `confirmed` | The connection itself is stored explicitly in the game data. In this version this is only a movement inside one prefab (`prefab_internal`): the prefab descriptor stores a chain of curves from an input slot to an output slot. It is a statement about the evidence for this one edge. See [What `confirmed` means](#what-confirmed-means) |
 | `candidate` | Plausible, but a part is not confirmed: lane directions come from a rule that is measured, not confirmed; lanes are paired by index and the lane order is unknown |
 | `unknown` | The data does not say whether the connection exists. The edges join **all** slot combinations of the two prefabs and are not a statement that each pair is connected |
 | `forbidden` | Excluded by explicit data. The current version never writes it, because no such data is known. The schema can represent it |
 
 A reader must preserve all four values and must not map `candidate` or `unknown` to `confirmed`.
+
+### What `confirmed` means
+
+`confirmed` answers one question only: *Is this single connection stored in the game data?* In this version it is written for `prefab_internal` edges and for no other category. The meaning of the other statuses is the same kind of statement about the evidence: `candidate` says the connection is plausible but part of it is an assumption, `unknown` says the data does not say whether it exists, `forbidden` says the data excludes it.
+
+**What `confirmed` guarantees**
+
+- The two slots belong to the same prefab, and the prefab descriptor stores a chain of curves that leads from the input slot to the output slot.
+- The direction of the edge (from the input slot to the output slot) is the stored direction.
+
+**What `confirmed` does not guarantee**
+
+| Misreading | Why it is wrong |
+|---|---|
+| "A route made of confirmed edges is connected." | A confirmed edge always joins an input slot to an output slot of the same prefab, and no confirmed edge starts at an output slot, so a path of confirmed edges has at most one edge. No confirmed edge touches a road lane, and none joins two prefabs. Every step onto or off a road is a `candidate` edge |
+| "A route made of confirmed edges can be driven." | Traffic rules are stored as references only, signals and their phases are not exported, and vehicle and legal restrictions are not evaluated. Nothing in the data establishes that a route is drivable |
+| "The lane direction is verified." | Only the direction inside the prefab is stored. The driving direction of the road lanes before and after it comes from a rule that is measured, not confirmed (`lane_traversal_direction_is_candidate`) |
+| "Both ends are attached to the right map nodes." | The attachment of the prefab slots to map nodes uses the node mapping of the prefab instance. It is checked against the node distances; unexplained exceptions remain (open questions PJ2 and NV8) |
+| "The edge is usable in every routing mode." | Eligibility is not in the file. RoadPilot-Map's current policy uses `confirmed` edges in both modes, but that is a decision of the route search, not a property of the edge |
+| "The graph is connected." | The network consists of many separate pieces (`graph_is_not_one_connected_network`) |
+
+**Why `candidate` and `unknown` stay distinct.** They are different answers. A `candidate` edge is plausible, and the open part is which lanes it joins (the lane order is unknown, LM2). An `unknown` edge says that the data does not say whether the connection exists at all; the prefab-to-prefab edges join *all* slot combinations of the two prefabs, and which of these pairs exist is not known. A consumer that merges them, or treats either as `confirmed`, makes a claim that the data does not support. A consumer may still decide to use `candidate` edges (RoadPilot-Map does so in `AllowCandidates` mode, and marks the result as provisional), but that is an explicit decision at level 3, not a change of the status.
 
 ### Disconnected components
 
@@ -249,6 +271,18 @@ for await (const line of lines) {
 }
 if (!footer || nodes.length !== header.counts.nodes) throw new Error("incomplete export");
 // Drawing: position[i] / header.coordinate_system.position_scale gives world units.
+
+// `status` is the confidence in an edge. It is NOT routing eligibility and NOT proof that
+// a path can be driven. Eligibility is your program's decision. This is RoadPilot-Map's
+// policy as an example; keep the result labelled with the policy that produced it.
+type Mode = "confirmed_only" | "allow_candidates";
+function eligible(edge: Edge, mode: Mode): boolean {
+  if (edge.status === "confirmed") return true;
+  if (edge.status === "candidate") return mode === "allow_candidates";
+  return false; // "unknown" and "forbidden" are never used; never map them to "confirmed"
+}
+// A path of eligible edges is a topological path, not a validated route. If it contains
+// "candidate" edges it is provisional; show that to the user.
 ```
 
 In Rust, `roadpilot_map::export::read_navigation_export` and `check_navigation_export` are a reference reader that applies all these checks; they use no other crate and can serve as an example. `roadpilot-map check-navigation-export <file>` runs them.
@@ -307,7 +341,7 @@ These limitations are in the data, not in the file format. The codes in the head
 
 | Code | Meaning |
 |---|---|
-| `roads_without_known_traffic_side_are_not_exported` | Roads whose nodes name no country, or different countries, are not in the graph (36,418 ETS2 roads and 25,853 ATS roads, 14 % and 11 % of all roads). They are listed as `road_lanes_not_navigable` issues. They cut the network into pieces. How the game assigns their traffic side is not understood (NV7) |
+| `roads_without_known_traffic_side_are_not_exported` | Roads whose traffic side is unknown for any reason are not in the graph: 36,418 ETS2 roads (14.4 %) and 25,853 ATS roads (11.5 %). Of these, 35,948 and 25,280 roads have nodes that name no country; the others have nodes that name different countries, a look that contradicts the country, or an undefined country. Each is listed as a `road_lanes_not_navigable` issue, so the issue count is the authoritative number. Roads with zero lanes (10,093 ETS2, 8 ATS) have no lanes to export and are not listed as issues. The roads cut the network into pieces. How the game assigns their traffic side is not understood (NV7). Definitions: [road counts](connectivity-audit.md#road-counts-and-their-definitions) |
 | `lane_traversal_direction_is_candidate` | The driving direction of a lane comes from the traffic side of the road. The rule agrees with prefab data for 99.3–99.5 % of the arms where it can be tested, but some contradictions are unexplained, so `road_lane` edges are `candidate` (NV1) |
 | `lane_order_is_unknown` | The lane index order across a road is not confirmed (LM2). All pairings of road lanes with lanes or prefab slots are by index and therefore `candidate` |
 | `prefab_to_prefab_lane_pairing_is_unknown` | Where two prefabs are joined directly, the lane pairing is unknown (PJ4). `prefab_to_prefab` edges join all slot combinations and are `unknown` |
@@ -317,7 +351,7 @@ These limitations are in the data, not in the file format. The codes in the head
 
 Further points:
 
-- A `confirmed` edge is a stored connection, not a permission to drive.
+- A `confirmed` edge is a stored connection inside one prefab. It is not a connected route, not a permission to drive and not a verified direction; see [What `confirmed` means](#what-confirmed-means).
 - Traffic rules are references only; signals and their phases are not exported (PJ1, PJ3, PJ5).
 - Unresolved prefab instances (860 in ETS2, 1,030 in ATS) are not in the graph (PJ2).
 - Identifiers are not stable across game versions.
