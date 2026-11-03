@@ -33,7 +33,7 @@ RoadPilot-Map/
 | `roadpilot-map-geometry` | lib | Road and lane curves, lane widths and offsets, sampling, curvature and curve radius. |
 | `roadpilot-map-network` | lib | Road graph, intersections, lane-level connectivity, and later a spatial index for map matching. |
 | `roadpilot-map-package` | lib | Map package manifest and data format, versioning, writer and reader. |
-| `roadpilot-map` | lib | Public facade. Discovers the game installation, builds the map model from parsed records, runs the pipeline stages in order and re-exports the stable public API. |
+| `roadpilot-map` | lib | Public facade. Discovers the game installation, builds the map model from parsed records, runs the pipeline stages in order and re-exports the stable public API. Also holds the development diagnostics (`dev` module) used by `roadpilot-map doctor`. |
 | `roadpilot-map-cli` | bin | User-facing commands. Depends only on the facade. |
 
 ## Dependency rules

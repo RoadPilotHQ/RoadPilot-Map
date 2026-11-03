@@ -15,12 +15,12 @@ Each step is small, independently verifiable and committed separately.
 | 5 | Add a `cargo-deny` configuration with a dependency license allow list and advisory checks. | `cargo deny check` passes. | Done |
 | 6 | Register the build, test, format, lint and deny checks with the local Git workflow, and optionally add GitHub Actions CI. | The checks run before every commit; CI is green if added. | Done |
 | 7 | Define the fixture and test policy: a `tests/fixtures/` convention for synthetic data and an opt-in gate (`ROADPILOT_MAP_GAME_DIR`) for tests against a real installation. | The policy is documented in [Test and fixture policy](../testing.md). The opt-in gate is implemented together with the first local installation test. | Done |
-| 8 | Implement `roadpilot-map doctor --game-dir <path>`: check that the folder looks like an ATS or ETS2 installation and list its `.scs` archives, without parsing them. | Tests against temporary fake installation folders pass. | Planned |
+| 8 | Implement `roadpilot-map doctor [--project-dir <path>]`: read-only development diagnostics for the toolchain, workspace, configuration, cargo-deny and documentation (see [doctor](../architecture/library-and-cli.md#doctor)). | Tests against temporary synthetic project folders pass. | Done |
 
 ## Notes
 
 - Step 6 changes configuration of the local Git workflow outside this repository and needs explicit approval before it is done.
-- Step 8 is the first code that touches a game installation. It only reads folder contents and never parses or copies game files.
+- Step 8 was originally planned as a check of a game installation (`doctor --game-dir`). It was changed to development diagnostics for the project itself, and the game installation check moved to Phase 1. Step 8 does not touch any game installation.
 - No real game files or generated map data are added to the repository in any step.
 
 ## Exit criteria
@@ -34,4 +34,4 @@ Phase 0 is complete when:
 
 ## Next phase
 
-Phase 1 covers the SCS archive format: documenting it in `docs/formats/`, building synthetic fixtures, and implementing `roadpilot-map-archive` to list and read archive entries.
+Phase 1 covers the SCS archive format: documenting it in `docs/formats/`, building synthetic fixtures, and implementing `roadpilot-map-archive` to list and read archive entries. It also includes the game installation check (`--game-dir`) that was originally planned for Phase 0, Step 8.

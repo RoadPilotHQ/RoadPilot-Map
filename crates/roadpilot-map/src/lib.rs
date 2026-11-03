@@ -9,6 +9,11 @@
 //!
 //! The library never writes to the terminal. Presentation is the job of the
 //! caller, such as the `roadpilot-map` command-line tool.
+//!
+//! The [`dev`] module contains development diagnostics for working on
+//! RoadPilot-Map itself. It is not part of map processing.
+
+pub mod dev;
 
 /// Returns the version of this library, for example `"0.1.0"`.
 ///
