@@ -1,0 +1,23 @@
+[package]
+name = "roadpilot-map-archive"
+description = "Minimal read-only HashFS v2 reader for selected files in SCS archives."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "roadpilot_map_archive"
+
+[dependencies]
+# zlib decompression (RFC 1950) for compressed index tables and entries.
+# Only the allocation-free core decoder is used.
+miniz_oxide = { version = "0.9", default-features = false }
+
+[dev-dependencies]
+# The tests build synthetic archives and need the zlib compressor.
+miniz_oxide = { version = "0.9", features = ["with-alloc"] }
+
+[lints]
+workspace = true

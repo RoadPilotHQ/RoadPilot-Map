@@ -2,7 +2,7 @@
 
 This folder contains the architecture documentation, decision records and plans for RoadPilot-Map.
 
-> **Status: early planning.** No source code exists yet. Everything described here is the planned design unless a document says otherwise.
+> **Status: Phase 1.** The workspace, the development diagnostics and the HashFS v2 archive reader are implemented. Everything else described here is the planned design unless a document says otherwise.
 
 ## Contents
 
@@ -16,6 +16,10 @@ This folder contains the architecture documentation, decision records and plans 
 ### Testing
 
 - [Test and fixture policy](testing.md) - test categories, synthetic fixtures and game data restrictions.
+
+### Formats
+
+- [HashFS v2 archive reader](formats/hashfs-v2.md) - supported archive format, API, validation and limitations of `roadpilot-map-archive`.
 
 ### Research
 

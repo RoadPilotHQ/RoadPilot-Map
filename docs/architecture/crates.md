@@ -2,7 +2,7 @@
 
 RoadPilot-Map is a single Cargo workspace with several small crates. This document describes the planned layout and the dependency rules.
 
-> **Planned.** No crates exist yet. Phase 0 creates only `roadpilot-map` and `roadpilot-map-cli`. The other crates are added when their phase starts.
+> **Partly implemented.** `roadpilot-map` and `roadpilot-map-cli` exist since Phase 0, `roadpilot-map-archive` since Phase 1. The other crates are added when their phase starts.
 
 ## Workspace layout
 
@@ -27,7 +27,7 @@ RoadPilot-Map/
 
 | Crate | Kind | Responsibility |
 |---|---|---|
-| `roadpilot-map-archive` | lib | Open SCS archive files (`.scs`), list entries, read and decompress entry contents. No knowledge of map semantics. |
+| `roadpilot-map-archive` | lib | Open HashFS v2 archives (`.scs`) read-only, find entries by path, list directories and read single entries (stored or zlib). No knowledge of map semantics. See [HashFS v2 archive reader](../formats/hashfs-v2.md). |
 | `roadpilot-map-formats` | lib | Parse game definition files and map sector files into raw, format-close records. No geometry computation. |
 | `roadpilot-map-model` | lib | Internal map model: nodes, road segments, prefabs, lanes, sectors, identifiers, and the result types of the geometry and network stages. Plain data types, no I/O. |
 | `roadpilot-map-geometry` | lib | Road and lane curves, lane widths and offsets, sampling, curvature and curve radius. |
@@ -73,7 +73,7 @@ These conventions are in effect since Phase 0 (steps 3 and 4). The error-handlin
 - **Toolchain:** development uses the stable toolchain pinned in `rust-toolchain.toml`. The minimum supported Rust version is set by `rust-version` in the workspace `Cargo.toml`. Clippy checks code against that minimum.
 - **Formatting:** `rustfmt` with the stable options in `rustfmt.toml`. `cargo fmt --all --check` must pass.
 - **Linting:** Clippy's default lints plus the workspace lints in `Cargo.toml`. `cargo clippy --workspace --all-targets -- -D warnings` must pass.
-- **Errors:** library crates define typed errors with `thiserror`. Only the CLI uses `anyhow`.
+- **Errors:** library crates define typed errors. `thiserror` is the default way to write them; only the CLI uses `anyhow`. `roadpilot-map-archive` implements `Display` and `std::error::Error` by hand instead, because `thiserror` adds a proc-macro dependency tree whose `unicode-ident` crate requires the Unicode-3.0 license, which is not on the allow list.
 - **Panics:** library code must not panic on malformed input. `unwrap` is rejected by Clippy. `expect` is allowed only where an invariant is proven, and the reason is stated in the message.
 - **Unsafe code:** forbidden for all crates by the workspace lint `unsafe_code = "forbid"`. Any exception needs an ADR.
 - **Dependencies:** kept minimal. `cargo deny check` must pass. It is configured in `deny.toml` and checks:
@@ -81,5 +81,6 @@ These conventions are in effect since Phase 0 (steps 3 and 4). The error-handlin
   - **licenses:** only common permissive licenses (Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MIT) are allowed for dependencies. This is not the project's own license, which is still undecided. Review the list before adding the first dependency and again once the project license is chosen.
   - **bans:** wildcard version requirements are errors; duplicate crate versions are warnings. No crates are banned yet, and every future ban needs a documented reason.
   - **sources:** only crates.io. Other registries and git dependencies are rejected until explicitly approved.
+- **Current external dependencies:** `miniz_oxide` (zlib decoding in `roadpilot-map-archive`, license MIT OR Zlib OR Apache-2.0) and its dependency `adler2` (0BSD OR MIT OR Apache-2.0).
 - **Tool version:** cargo-deny is pinned to 0.20.2 (see the header of `deny.toml`). Install it with `cargo install cargo-deny --version 0.20.2 --locked`.
 - **Publishing:** crates are not published to crates.io until the license is decided. Unpublished workspace crates are skipped by the license check; a published crate needs a license field.

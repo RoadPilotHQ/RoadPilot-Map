@@ -130,7 +130,7 @@ Tests must not depend on anything they do not control:
 
 - Temporary files are written under the system temporary directory (`std::env::temp_dir()`), in a directory unique to the test, and are removed when the test finishes.
 - Tests never write into the repository, the user's home directory or a game installation.
-- The project has no external dependencies yet. Adding a test helper crate (for example for temporary directories) is a normal dependency decision and must pass the [dependency policy](architecture/crates.md#conventions).
+- Tests use small hand-written helpers for temporary folders. Adding a test helper crate (for example for temporary directories) is a normal dependency decision and must pass the [dependency policy](architecture/crates.md#conventions).
 
 ## Review checklist for fixture changes
 
