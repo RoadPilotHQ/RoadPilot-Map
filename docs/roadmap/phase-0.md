@@ -13,7 +13,7 @@ Each step is small, independently verifiable and committed separately.
 | 3 | Create the Cargo workspace skeleton with the `roadpilot-map` facade library and the `roadpilot-map-cli` binary. The CLI supports `--version`. Add one unit test. | `cargo build` and `cargo test` pass. | Done |
 | 4 | Pin the toolchain in `rust-toolchain.toml` and add `rustfmt` and `clippy` configuration. | `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` pass. | Done |
 | 5 | Add a `cargo-deny` configuration with a dependency license allow list and advisory checks. | `cargo deny check` passes. | Done |
-| 6 | Register the build, test, format, lint and deny checks with the local Git workflow, and optionally add GitHub Actions CI. | The checks run before every commit; CI is green if added. | Planned |
+| 6 | Register the build, test, format, lint and deny checks with the local Git workflow, and optionally add GitHub Actions CI. | The checks run before every commit; CI is green if added. | Done |
 | 7 | Define the fixture and test policy: a `tests/fixtures/` convention for synthetic data and an opt-in gate (`ROADPILOT_MAP_GAME_DIR`) for tests against a real installation. | The gated test is skipped by default and runs when the variable is set. | Planned |
 | 8 | Implement `roadpilot-map doctor --game-dir <path>`: check that the folder looks like an ATS or ETS2 installation and list its `.scs` archives, without parsing them. | Tests against temporary fake installation folders pass. | Planned |
 
