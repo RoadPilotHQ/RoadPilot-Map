@@ -11,7 +11,7 @@ This document describes the stages that turn a local ATS or ETS2 installation in
 | 3. Parse | Partially implemented: sector `.base` and `.data` files, prefab descriptors, road look, lane type, country, prefab model and traffic rule definitions |
 | 4. Model | Partially implemented: roads, nodes, their connections, lanes and prefabs |
 | 5. Geometry | Planned; the curve between road nodes is under investigation |
-| 6. Network | Partially implemented: road-to-road connections, candidate lane transitions, movements through junctions |
+| 6. Network | Partially implemented: road-to-road connections, candidate lane transitions, movements through junctions, a navigation graph with route search |
 | 7. Package | Planned |
 
 ## Overview
@@ -77,7 +77,7 @@ Each stage has a typed input and a typed output. Stages do not share hidden stat
 - **Output:** a road graph with intersections and lane-level connections, including connections through prefabs (junctions).
 - **Crate:** `roadpilot-map-network`.
 - **Notes:** designed so a spatial index for future map matching can be added without breaking the package format.
-- **Status:** partially implemented, not yet in its own crate. `RoadNetwork` resolves road-to-road connections through shared nodes in stored direction (`successor`, `predecessor`, `connections`). `LaneNetwork::transition` pairs lanes across such connections as candidates by index where both roads match. `PrefabNetwork` gives the arms of each junction (prefab instance), its stored internal movements (confirmed) and road-lane movements through it (candidates). Lane transitions between directly joined prefabs, routing and confirmed road-lane pairing are open.
+- **Status:** partially implemented, not yet in its own crate. `RoadNetwork` resolves road-to-road connections through shared nodes in stored direction (`successor`, `predecessor`, `connections`). `LaneNetwork::transition` pairs lanes across such connections as candidates by index where both roads match. `PrefabNetwork` gives the arms of each junction (prefab instance), its stored internal movements (confirmed) and road-lane movements through it (candidates). The navigation graph (`NavigationGraph`) joins these into one directed graph with a status and origin per edge, and finds routes in two modes, `ConfirmedOnly` and `AllowCandidates` ([Navigation graph](../navigation/navigation-graph.md)). Lane transitions between directly joined prefabs and confirmed road-lane pairing are open.
 
 ### 7. Package
 

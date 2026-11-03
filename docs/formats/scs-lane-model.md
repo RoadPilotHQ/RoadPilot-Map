@@ -6,7 +6,7 @@ Status: **implemented** (Phase 1, Step 4B):
 - `crates/roadpilot-map-model`: lane types (`lanes`),
 - `crates/roadpilot-map`: `LaneDefinitions` and `build_lane_network`.
 
-It builds on [SCS road geometry](scs-road-geometry.md) and [SCS sector format](scs-sector-format.md). Lane geometry and traffic rules are not part of this step. Junctions (prefabs) and lane movements through them are described in [SCS prefabs and junctions](scs-prefab-junctions.md) (Step 5).
+It builds on [SCS road geometry](scs-road-geometry.md) and [SCS sector format](scs-sector-format.md). Lane geometry and traffic rules are not part of this step. The navigation graph that uses the lanes is described in [Navigation graph](../navigation/navigation-graph.md). Junctions (prefabs) and lane movements through them are described in [SCS prefabs and junctions](scs-prefab-junctions.md) (Step 5).
 
 ATS was updated by the game launcher after this step. The ATS figures below come from the previous version; the current version differs slightly (for example 224,868 roads and 212 road looks).
 

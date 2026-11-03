@@ -19,6 +19,11 @@
 //! lights, and candidate road-lane movements through a prefab. A junction is
 //! a prefab instance; there is no separate junction record.
 //!
+//! Finally it holds the **navigation graph** (Phase 1, Step 6): lanes and
+//! prefab slots as nodes, connections with their status
+//! (confirmed, candidate, unknown, forbidden) and origin as directed edges,
+//! and a route search that never uses unconfirmed connections silently.
+//!
 //! Not modelled yet: curves between nodes, lane geometry, speed limits,
 //! signal states. See `docs/formats/scs-road-geometry.md`,
 //! `docs/formats/scs-lane-model.md` and `docs/formats/scs-prefab-junctions.md`.
@@ -55,14 +60,20 @@
 
 mod geometry;
 mod lanes;
+mod navigation;
 mod network;
 mod prefabs;
+mod routing;
 
 pub use geometry::{Position, RoadGeometry, Rotation};
 pub use lanes::{
     Lane, LaneConfig, LaneConnection, LaneDirection, LaneError, LaneId, LaneIssue, LaneNetwork,
     LaneTransition, LaneType, OffsetsState, RoadLanes, RoadSide, StoredLaneOffset, TrafficSide,
     TrafficSideIssue, TrafficSideState, TransitionIssue,
+};
+pub use navigation::{
+    ConnectionStatus, EdgeId, EdgeOrigin, EdgeOriginKind, GraphIssue, GraphIssueKind, NavEdge,
+    NavNode, NavNodeId, NavigationError, NavigationGraph, NavigationGraphBuilder, PrefabSlotRef,
 };
 pub use network::{
     ModelError, Node, NodeId, NodeLink, NodeRoads, Road, RoadConnection, RoadId, RoadNetwork,
@@ -73,3 +84,4 @@ pub use prefabs::{
     PrefabLaneMovements, PrefabMovement, PrefabNetwork, PrefabResolution, PrefabSemaphore, RuleRef,
     SlotDirection,
 };
+pub use routing::{Route, RouteConfirmation, RouteCost, RouteError, RouteStep, RoutingMode};

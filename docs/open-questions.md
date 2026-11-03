@@ -18,6 +18,7 @@ This document tracks unresolved technical and legal questions. When a question i
 | T10 | Which operating systems are supported for running the CLI? | Affects CI targets and installation discovery. | Decide in Phase 0 together with CI setup. |
 | T11 | Which precision does driving assistance require for lane positions, widths and curvature? | Defines acceptance criteria for the geometry stage. | Agree requirements with the RoadPilot application. |
 | T12 | How do lanes connect at junctions, and which movements are allowed? | Lane-level connectivity through junctions is needed for driving assistance. | Status (Phase 1, Step 5): a junction is a prefab instance; its internal movements are stored and modelled as confirmed, road lanes are paired with prefab slots only as candidates, and lane transitions between directly joined prefabs, traffic rule semantics and the traffic light of a movement are open (PJ1–PJ8 in [SCS prefabs and junctions](formats/scs-prefab-junctions.md)). |
+| T13 | How are start and goal of a route defined, and what should a route cost? | Routing needs trustworthy points and a meaningful cost. | Status (Phase 1, Step 6): routes run between typed graph nodes (lanes and prefab slots), with an algorithmic cost (candidate edges, then edges). Positions, physical cost and the confirmation of the lane direction rule are open (NV1–NV6 in [Navigation graph](navigation/navigation-graph.md#open-questions)). |
 
 ## Legal questions
 

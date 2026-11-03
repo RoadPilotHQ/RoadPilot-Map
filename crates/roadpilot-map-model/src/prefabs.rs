@@ -568,6 +568,45 @@ impl PrefabNetwork {
             .collect())
     }
 
+    /// The used slots of instance node `arm` of a resolved prefab, in slot
+    /// order. Empty for unresolved prefabs and unknown nodes.
+    #[must_use]
+    pub fn used_slots(&self, id: PrefabId, arm: usize, direction: SlotDirection) -> Vec<usize> {
+        let Some((inst, def)) = self.resolved(id) else {
+            return Vec::new();
+        };
+        let Some(node) = inst.definition_node(arm).and_then(|d| def.nodes.get(d)) else {
+            return Vec::new();
+        };
+        let slots = match direction {
+            SlotDirection::Input => &node.input_slots,
+            SlotDirection::Output => &node.output_slots,
+        };
+        slots
+            .iter()
+            .enumerate()
+            .filter_map(|(s, c)| c.map(|_| s))
+            .collect()
+    }
+
+    /// The road lanes paired with the used slots of `arm`, as `(slot, lane)`,
+    /// or why they cannot be paired. The pairing is by index and therefore a
+    /// candidate (open question LM2).
+    ///
+    /// # Errors
+    ///
+    /// The [`ArmIssue`] that prevents the pairing.
+    pub fn slot_lanes(
+        &self,
+        lanes: &LaneNetwork,
+        id: PrefabId,
+        arm: &PrefabArm,
+        direction: SlotDirection,
+    ) -> Result<Vec<(usize, LaneId)>, ArmIssue> {
+        let (_, def) = self.resolved(id).ok_or(ArmIssue::PrefabUnresolved)?;
+        Self::pair_arm(lanes, def, arm, direction)
+    }
+
     /// Candidate lane movements from road lanes through the prefab into road
     /// lanes, and the arms whose lanes could not be paired.
     #[must_use]

@@ -488,3 +488,200 @@ fn builds_the_prefab_network_of_the_installation() {
         "every prefab model and descriptor resolves"
     );
 }
+
+fn variant_name(debug: &str) -> String {
+    debug
+        .split(['(', '{', ' '])
+        .next()
+        .unwrap_or_default()
+        .to_owned()
+}
+
+#[test]
+#[ignore = "reads a local game installation; set ROADPILOT_MAP_GAME_DIR and run with --ignored"]
+fn builds_the_navigation_graph_of_the_installation() {
+    use roadpilot_map::model::{
+        ConnectionStatus, NavNode, NavigationGraph, Route, RouteConfirmation, RouteError,
+        RoutingMode,
+    };
+    use std::time::Instant;
+
+    let dir = game_dir();
+    let files = sector_files(&dir);
+    let sectors: Vec<_> = files
+        .iter()
+        .map(|f| parse_base(f).expect("sector parses"))
+        .collect();
+    let network = build_road_network(&sectors).expect("road network builds");
+    let lane_defs =
+        LaneDefinitions::from_units(&lane_definition_units(&dir)).expect("lane definitions");
+    let lanes = build_lane_network(&network, &sectors, &lane_defs).expect("lane network builds");
+    let units = definition_units(&dir, &["prefab", "traffic_rules"], false);
+    let defs = PrefabDefinitions::from_units(&units).expect("prefab definitions");
+    let archives = open_archives(&dir);
+    let load = |path: &str| archives.iter().rev().find_map(|a| a.read_file(path).ok());
+    let prefabs = build_prefab_network(&network, &sectors, &defs, load).expect("prefabs build");
+
+    let t = Instant::now();
+    let graph = NavigationGraph::build(&network, &lanes, &prefabs).expect("graph builds");
+    let build_time = t.elapsed();
+    assert_eq!(
+        NavigationGraph::build(&network, &lanes, &prefabs).expect("graph builds"),
+        graph,
+        "the graph is reproducible"
+    );
+
+    let [confirmed, candidate, unknown, forbidden] = graph.status_counts();
+    eprintln!(
+        "navigation graph: {} nodes, {} edges ({confirmed} confirmed, {candidate} candidate, {unknown} unknown, {forbidden} forbidden), {} merged duplicates",
+        graph.node_count(),
+        graph.edge_count(),
+        graph.merged_duplicates()
+    );
+    eprintln!(
+        "build {build_time:?}, about {} MiB heap",
+        graph.approx_heap_bytes() >> 20
+    );
+    assert_eq!(forbidden, 0, "no source of forbidden connections is known");
+    assert!(confirmed > 0 && candidate > 0 && unknown > 0);
+
+    let mut by_origin: BTreeMap<String, usize> = BTreeMap::new();
+    for e in graph.edges() {
+        let key = format!("{:?} {:?}", e.origin().kind, e.status());
+        *by_origin.entry(key).or_default() += 1;
+    }
+    for (k, v) in &by_origin {
+        eprintln!("{v:>9}  edges: {k}");
+    }
+    let mut issues: BTreeMap<String, usize> = BTreeMap::new();
+    for i in graph.issues() {
+        *issues
+            .entry(variant_name(&format!("{:?}", i.kind)))
+            .or_default() += 1;
+    }
+    for (k, v) in &issues {
+        eprintln!("{v:>9}  issues: {k}");
+    }
+    // Only stored internal prefab movements are confirmed.
+    for e in graph.edges() {
+        assert_eq!(
+            e.status() == ConnectionStatus::Confirmed,
+            e.origin().kind == roadpilot_map::model::EdgeOriginKind::PrefabInternalCurve
+        );
+    }
+
+    let check = |route: &Route| {
+        let mut at = route.start;
+        for s in &route.steps {
+            assert_eq!(s.from, at, "steps are connected");
+            at = s.to;
+            match route.mode {
+                RoutingMode::ConfirmedOnly => assert_eq!(s.status, ConnectionStatus::Confirmed),
+                RoutingMode::AllowCandidates => assert!(matches!(
+                    s.status,
+                    ConnectionStatus::Confirmed | ConnectionStatus::Candidate
+                )),
+            }
+        }
+        assert_eq!(at, route.goal);
+        let candidates = route
+            .steps
+            .iter()
+            .filter(|s| s.status == ConnectionStatus::Candidate)
+            .count();
+        assert_eq!(candidates, route.cost.candidate_edges as usize);
+        assert_eq!(
+            matches!(route.confirmation(), RouteConfirmation::Provisional { .. }),
+            candidates > 0
+        );
+    };
+
+    // Confirmed-only: a stored prefab movement is a route of its own.
+    let sample = graph
+        .edges()
+        .find(|e| e.status() == ConnectionStatus::Confirmed)
+        .expect("a confirmed edge");
+    let (a, b) = (
+        graph.node(sample.from()).expect("node"),
+        graph.node(sample.to()).expect("node"),
+    );
+    let route = graph
+        .route(a, b, RoutingMode::ConfirmedOnly)
+        .expect("confirmed route");
+    check(&route);
+    assert_eq!(
+        route.confirmation(),
+        RouteConfirmation::AllConnectionsConfirmed
+    );
+
+    // Starts spread over a 3 x 3 grid of the map: the first lane of each cell.
+    let positions: Vec<_> = network.nodes().map(|n| n.position.world()).collect();
+    let (mut min, mut max) = ([f64::MAX; 2], [f64::MIN; 2]);
+    for p in &positions {
+        for (k, axis) in [0usize, 2].into_iter().enumerate() {
+            min[k] = min[k].min(p[axis]);
+            max[k] = max[k].max(p[axis]);
+        }
+    }
+    let cell = |p: [f64; 3]| {
+        let c = |k: usize, axis: usize| {
+            (((p[axis] - min[k]) / (max[k] - min[k] + 1.0) * 3.0) as usize).min(2)
+        };
+        (c(0, 0), c(1, 2))
+    };
+    let mut starts: BTreeMap<(usize, usize), NavNode> = BTreeMap::new();
+    for node in graph.nodes() {
+        let NavNode::LaneEntry(lane) = node else {
+            continue;
+        };
+        let road = network.road(lane.road).expect("road");
+        let p = network
+            .node(road.start_node)
+            .expect("node")
+            .position
+            .world();
+        starts.entry(cell(p)).or_insert(node);
+    }
+    let t = Instant::now();
+    let mut routes = 0;
+    for (cell, start) in &starts {
+        let reach = graph
+            .reachable_from(*start, RoutingMode::AllowCandidates)
+            .expect("start is in the graph");
+        let confirmed_reach = graph
+            .reachable_from(*start, RoutingMode::ConfirmedOnly)
+            .expect("start is in the graph");
+        let goal = reach
+            .iter()
+            .rev()
+            .find(|n| matches!(n, NavNode::LaneExit(_)))
+            .copied()
+            .expect("a lane exit is reachable");
+        let route = graph
+            .route(*start, goal, RoutingMode::AllowCandidates)
+            .expect("provisional route");
+        check(&route);
+        assert_eq!(
+            graph.route(*start, goal, RoutingMode::AllowCandidates),
+            Ok(route.clone()),
+            "routes are reproducible"
+        );
+        // Lane directions and candidates keep a lane-to-lane route confirmed-free.
+        if route.cost.candidate_edges > 0 && *start != goal {
+            assert_eq!(
+                graph.route(*start, goal, RoutingMode::ConfirmedOnly),
+                Err(RouteError::NoConfirmedRoute)
+            );
+        }
+        routes += 1;
+        eprintln!(
+            "cell {cell:?}: reachable {} (confirmed only {}), route {} edges, {} candidates",
+            reach.len(),
+            confirmed_reach.len(),
+            route.cost.edges,
+            route.cost.candidate_edges
+        );
+    }
+    eprintln!("{routes} routes in {:?}", t.elapsed());
+    assert!(routes >= 4, "starts from several map regions");
+}

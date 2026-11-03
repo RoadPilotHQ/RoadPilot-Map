@@ -2,7 +2,7 @@
 
 This folder contains the architecture documentation, decision records and plans for RoadPilot-Map.
 
-> **Status: Phase 1.** The workspace, the development diagnostics, the HashFS v2 archive reader, the sector file parser, the road and node model, the lane model and the prefab and junction model are implemented. Everything else described here is the planned design unless a document says otherwise.
+> **Status: Phase 1.** The workspace, the development diagnostics, the HashFS v2 archive reader, the sector file parser, the road and node model, the lane model, the prefab and junction model and a first navigation graph with route search are implemented. Everything else described here is the planned design unless a document says otherwise.
 
 ## Contents
 
@@ -24,6 +24,10 @@ This folder contains the architecture documentation, decision records and plans 
 - [SCS prefabs and junctions](formats/scs-prefab-junctions.md) - prefab descriptors (`.ppd`), prefab definitions and instances, road-to-prefab connections, internal lane movements, traffic rules and static traffic lights; confirmed and open junction questions.
 - [SCS road geometry](formats/scs-road-geometry.md) - roads, nodes, their connections and the coordinate system; confirmed and open geometry questions.
 - [SCS sector format](formats/scs-sector-format.md) - confirmed layout of sector `.base` and `.data` files, the parser in `roadpilot-map-formats`, and open format questions.
+
+### Navigation
+
+- [Navigation graph and route planning](navigation/navigation-graph.md) - the directed graph of lanes and prefab slots, connection status and origin, the two routing modes, the algorithmic cost model and measurements.
 
 ### Research
 

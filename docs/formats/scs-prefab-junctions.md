@@ -6,7 +6,7 @@ Status: **implemented** (Phase 1, Step 5):
 - `crates/roadpilot-map-model`: prefab types (`prefabs`);
 - `crates/roadpilot-map`: `PrefabDefinitions` and `build_prefab_network`.
 
-It builds on [SCS sector format](scs-sector-format.md), [SCS road geometry](scs-road-geometry.md) and [SCS lane model](scs-lane-model.md). Not part of this step: the curve between nodes and lane geometry (G1), routing and navigation, the meaning of traffic rules, signal states and timing, and the other descriptor blocks.
+It builds on [SCS sector format](scs-sector-format.md), [SCS road geometry](scs-road-geometry.md) and [SCS lane model](scs-lane-model.md). Routing over these movements is described in [Navigation graph](../navigation/navigation-graph.md) (Step 6). Not part of this step: the curve between nodes and lane geometry (G1), the meaning of traffic rules, signal states and timing, and the other descriptor blocks.
 
 Evidence levels: **Confirmed** holds for all inspected data. **Measured** gives a stated share. **Inferred** follows from confirmed facts but was not tested on its own. **Unknown** is not established.
 
