@@ -60,9 +60,9 @@ Opt-in tests against a local installation (see below) follow these extra rules:
 - Pass all inputs explicitly (arguments, paths in temporary directories). They must not depend on the user's home directory, configuration or game installation.
 - Example today: `crates/roadpilot-map-cli/tests/cli.rs`.
 
-### Local installation tests (opt-in, future)
+### Local installation tests (opt-in)
 
-No such tests exist yet. When the first one is added, it must follow these rules:
+The first such test is `crates/roadpilot-map-formats/tests/real_installation.rs`. Every such test must follow these rules:
 
 - It is marked `#[ignore]` with a reason, so ordinary `cargo test` and CI never run it.
 - It needs the environment variable `ROADPILOT_MAP_GAME_DIR`, pointing to the game installation folder.
@@ -77,7 +77,7 @@ No such tests exist yet. When the first one is added, it must follow these rules
 - It never modifies the game installation and never commits, uploads or publishes game data or its output.
 - It asserts properties (for example "parsing succeeds" or "at least one road exists"), not exact values copied from game data.
 
-The exact implementation of this gate will be added together with the first local installation test.
+The gate is implemented by marking the test `#[ignore]` and reading `ROADPILOT_MAP_GAME_DIR`. If the variable is missing, or the folder has no `base_map.scs`, the test panics with a clear message. To cover both games, run the test once per installation.
 
 ## Fixture layout
 

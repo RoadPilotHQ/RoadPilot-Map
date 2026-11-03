@@ -1,0 +1,21 @@
+[package]
+name = "roadpilot-map-formats"
+description = "Parsers for SCS map files (sector .base and .data) into format-close records."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "roadpilot_map_formats"
+
+# No dependencies: the parsers take plain byte slices.
+
+[dev-dependencies]
+# Only for the opt-in test against a local game installation, which reads
+# sector files from the real archives. Not used by the library.
+roadpilot-map-archive.workspace = true
+
+[lints]
+workspace = true

@@ -34,3 +34,10 @@ version = "0.1.0"
 dependencies = [
  "roadpilot-map",
 ]
+
+[[package]]
+name = "roadpilot-map-formats"
+version = "0.1.0"
+dependencies = [
+ "roadpilot-map-archive",
+]

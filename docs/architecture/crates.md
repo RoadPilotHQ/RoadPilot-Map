@@ -2,7 +2,7 @@
 
 RoadPilot-Map is a single Cargo workspace with several small crates. This document describes the planned layout and the dependency rules.
 
-> **Partly implemented.** `roadpilot-map` and `roadpilot-map-cli` exist since Phase 0, `roadpilot-map-archive` since Phase 1. The other crates are added when their phase starts.
+> **Partly implemented.** `roadpilot-map` and `roadpilot-map-cli` exist since Phase 0, `roadpilot-map-archive` and `roadpilot-map-formats` since Phase 1. The other crates are added when their phase starts.
 
 ## Workspace layout
 
@@ -28,7 +28,7 @@ RoadPilot-Map/
 | Crate | Kind | Responsibility |
 |---|---|---|
 | `roadpilot-map-archive` | lib | Open HashFS v2 archives (`.scs`) read-only, find entries by path, list directories and read single entries (stored or zlib). No knowledge of map semantics. See [HashFS v2 archive reader](../formats/hashfs-v2.md). |
-| `roadpilot-map-formats` | lib | Parse game definition files and map sector files into raw, format-close records. No geometry computation. |
+| `roadpilot-map-formats` | lib | Parse game definition files and map sector files into raw, format-close records. No geometry computation. Today: sector `.base` and `.data` files, see [SCS sector format](../formats/scs-sector-format.md). |
 | `roadpilot-map-model` | lib | Internal map model: nodes, road segments, prefabs, lanes, sectors, identifiers, and the result types of the geometry and network stages. Plain data types, no I/O. |
 | `roadpilot-map-geometry` | lib | Road and lane curves, lane widths and offsets, sampling, curvature and curve radius. |
 | `roadpilot-map-network` | lib | Road graph, intersections, lane-level connectivity, and later a spatial index for map matching. |
@@ -57,7 +57,7 @@ RoadPilot-Map/
 1. Dependencies only point downward. Cycles are not allowed.
 2. `roadpilot-map-model` depends on no other workspace crate.
 3. `roadpilot-map-archive` depends on no other workspace crate. It does not need the model.
-4. `roadpilot-map-formats` does not depend on `archive`. It takes plain bytes or readers as input, and the facade connects the two.
+4. `roadpilot-map-formats` does not depend on `archive`. It takes plain bytes or readers as input, and the facade connects the two. The only exception is a dev-dependency for the opt-in test against a local installation, which reads sector files from the real archives.
 5. `roadpilot-map-cli` depends only on `roadpilot-map`.
 6. `roadpilot-map-package` must be usable on its own, so a consumer can read packages without pulling in extraction code. It depends only on `model`.
 7. `roadpilot-map-geometry`, `roadpilot-map-network` and `roadpilot-map-package` do not depend on each other. They exchange data only through `model` types, and the facade passes results from one stage to the next.

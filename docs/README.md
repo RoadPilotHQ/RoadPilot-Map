@@ -2,7 +2,7 @@
 
 This folder contains the architecture documentation, decision records and plans for RoadPilot-Map.
 
-> **Status: Phase 1.** The workspace, the development diagnostics and the HashFS v2 archive reader are implemented. Everything else described here is the planned design unless a document says otherwise.
+> **Status: Phase 1.** The workspace, the development diagnostics, the HashFS v2 archive reader and the sector file parser are implemented. Everything else described here is the planned design unless a document says otherwise.
 
 ## Contents
 
@@ -20,6 +20,7 @@ This folder contains the architecture documentation, decision records and plans 
 ### Formats
 
 - [HashFS v2 archive reader](formats/hashfs-v2.md) - supported archive format, API, validation and limitations of `roadpilot-map-archive`.
+- [SCS sector format](formats/scs-sector-format.md) - confirmed layout of sector `.base` and `.data` files, the parser in `roadpilot-map-formats`, and open format questions.
 
 ### Research
 

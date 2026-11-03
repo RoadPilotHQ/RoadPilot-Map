@@ -68,7 +68,7 @@ Path pattern: `map/<map>/sec<±XXXX><±YYYY>.<ext>`, where `<map>` is `europe` (
 | Extension | Count (ETS2 / ATS) | Total size, uncompressed (ETS2 / ATS) | Leading u32 | Likely content | Class | Confidence |
 |---|---|---|---|---|---|---|
 | `.base` | 1,101 / 925 | 216 MB / 231 MB | 907 in all files | Core map items (roads, prefabs, nodes and other items). Exact split between files unknown. | **A** | Encoding Verified, content Partial |
-| `.data` | 1,101 / 925 | 503 MB / 660 MB | 907 in all files | Item payloads that do not fit the base records (believed to include point and curve data). | **A** (until proven unneeded) | Partial |
+| `.data` | 1,101 / 925 | 503 MB / 660 MB | 907 in all files | One entry per road and prefab item of `.base` (confirmed in Step 3); entry contents unknown. | **A** (until proven unneeded) | Partial |
 | `.aux` | 1,101 / 925 | 1,755 MB / 2,151 MB | 907 in all files | Auxiliary items. May hold signs and other objects relevant for traffic rules. Largest file type. | **B** | Unknown |
 | `.desc` | 1,101 / 925 | < 1 MB | 3 | Sector description, very small. | **B** | Unknown |
 | `.snd` | 1,101 / 925 | 4 MB / 3 MB | 901, 903 or 907 | Sound items. | **C** | Partial |
@@ -232,11 +232,11 @@ By size, the required data is a small part of the installation: about 0.7 GB (ET
 
 | ID | Question | Blocks |
 |---|---|---|
-| M1 | Binary layout of sector files with leading value 907: header, item record types, and which item types are in `.base`, `.data` and `.aux`. | Parsing roads, prefabs, nodes, signs |
+| M1 | Binary layout of sector files with leading value 907: header, item record types, and which item types are in `.base`, `.data` and `.aux`. **Mostly resolved for `.base` and `.data` in Step 3** ([SCS sector format](../formats/scs-sector-format.md)): 23 item types with confirmed lengths, nodes, and `.data` as one entry per road and prefab. Open: `.data` entry contents, `.aux`. | Parsing roads, prefabs, nodes, signs |
 | M2 | Binary layout of `.ppd` with leading value 25: nodes, lane curves, semaphores, curve-to-semaphore links. | Junctions, traffic lights |
 | M3 | Road curve representation between two nodes (T2), and how lane positions are derived from `road_look` offsets. | Lane geometry, curvature |
 | M4 | Source of lane width: fixed value, derived from offsets and road size, or from template variants. | Lane width |
-| M5 | How sector items reference definitions (name, hashed token, or index). | Linking map items to definitions |
+| M5 | How sector items reference definitions (name, hashed token, or index). **Resolved for roads and prefabs in Step 3:** base-38 tokens that name `road_look` and `prefab_model` units. | Linking map items to definitions |
 | M6 | How the semaphore profile variant and the traffic rule are chosen when a prefab uses only part of a unit name. | Traffic lights, turn rules |
 | M7 | Loading order of `def/world/<type>.<suffix>.sii` files and unit-level overrides by DLCs (T4). | Correct definitions with DLCs |
 | M8 | When the urban speed limit applies (city area, road attribute or sign), and how sign rules override the country limit. | Speed limits |
@@ -244,7 +244,7 @@ By size, the required data is a small part of the installation: about 0.7 GB (ET
 | M10 | World units, axis orientation and scale (T3). | All geometry |
 | M11 | Whether sign items are needed from `.aux`, given that telemetry already reports a speed limit at runtime. | Scope of `.aux` |
 | M12 | 4 `prefab_model` references per game point to no listed `.ppd`. Unused definitions, or entries in another archive? | Completeness check |
-| M13 | Community documentation of sector and `.ppd` layouts exists. Its license must be reviewed (L3) before it is used as a reference. | M1, M2 |
+| M13 | Community documentation of sector and `.ppd` layouts exists. Its license must be reviewed (L3) before it is used as a reference. **Done for the sector format:** ts-map (MIT) used as a reference, TruckLib (GPL-2.0) not used. | M1, M2 |
 
 The installed game versions were not recorded during this step. Supported versions are tracked as T8.
 
