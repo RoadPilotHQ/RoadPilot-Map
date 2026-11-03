@@ -8,8 +8,14 @@
 //! connections that follow from the node references, and the confirmed
 //! geometry of each road. Coordinates stay in the SCS world system.
 //!
-//! Not modelled yet: lanes, road looks, junctions (prefabs), curves between
-//! nodes, speed limits. See `docs/formats/scs-road-geometry.md`.
+//! It also holds the **lanes** of each road (Phase 1, Step 4B): lane sides,
+//! types, driving directions where the traffic side is known, stored offsets,
+//! and candidate lane transitions between connected roads. Unconfirmed
+//! values are explicit states, never defaults.
+//!
+//! Not modelled yet: junctions (prefabs), curves between nodes, lane
+//! geometry, speed limits. See `docs/formats/scs-road-geometry.md` and
+//! `docs/formats/scs-lane-model.md`.
 //!
 //! ```
 //! use roadpilot_map_model::*;
@@ -42,9 +48,15 @@
 //! ```
 
 mod geometry;
+mod lanes;
 mod network;
 
 pub use geometry::{Position, RoadGeometry, Rotation};
+pub use lanes::{
+    Lane, LaneConfig, LaneConnection, LaneDirection, LaneError, LaneId, LaneIssue, LaneNetwork,
+    LaneTransition, LaneType, OffsetsState, RoadLanes, RoadSide, StoredLaneOffset, TrafficSide,
+    TrafficSideIssue, TrafficSideState, TransitionIssue,
+};
 pub use network::{
     ModelError, Node, NodeId, NodeLink, NodeRoads, Road, RoadConnection, RoadId, RoadNetwork,
 };

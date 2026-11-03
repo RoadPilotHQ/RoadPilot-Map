@@ -235,7 +235,7 @@ By size, the required data is a small part of the installation: about 0.7 GB (ET
 | M1 | Binary layout of sector files with leading value 907: header, item record types, and which item types are in `.base`, `.data` and `.aux`. **Mostly resolved for `.base` and `.data` in Step 3** ([SCS sector format](../formats/scs-sector-format.md)): 23 item types with confirmed lengths, nodes, and `.data` as one entry per road and prefab. Open: `.data` entry contents, `.aux`. | Parsing roads, prefabs, nodes, signs |
 | M2 | Binary layout of `.ppd` with leading value 25: nodes, lane curves, semaphores, curve-to-semaphore links. | Junctions, traffic lights |
 | M3 | Road curve representation between two nodes (T2), and how lane positions are derived from `road_look` offsets. | Lane geometry, curvature |
-| M4 | Source of lane width: fixed value, derived from offsets and road size, or from template variants. | Lane width |
+| M4 | Source of lane width: fixed value, derived from offsets and road size, or from template variants. **Step 4B:** no per-lane width is stored in road looks or lane types; non-template looks store only a side size. See [SCS lane model](../formats/scs-lane-model.md). | Lane width |
 | M5 | How sector items reference definitions (name, hashed token, or index). **Resolved for roads and prefabs in Step 3:** base-38 tokens that name `road_look` and `prefab_model` units. | Linking map items to definitions |
 | M6 | How the semaphore profile variant and the traffic rule are chosen when a prefab uses only part of a unit name. | Traffic lights, turn rules |
 | M7 | Loading order of `def/world/<type>.<suffix>.sii` files and unit-level overrides by DLCs (T4). | Correct definitions with DLCs |

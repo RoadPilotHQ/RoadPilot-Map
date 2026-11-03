@@ -121,7 +121,7 @@ A **token** packs a name of up to 12 characters (`0-9`, `a-z`, `_`) into a `u64`
 | 20 | `f32[4]` | Rotation | Confirmed unit quaternion (norm 1 ± 0.001) on all nodes. Component order unknown. |
 | 36 | `u64` | Backward item UID or 0 | Cross-checked (road end nodes) |
 | 44 | `u64` | Forward item UID or 0 | Cross-checked (road start nodes) |
-| 52 | `u32` | Flags | Unknown |
+| 52 | `u32` | Flags | Bits 8–15 and 16–23: country IDs (`country_id` in `def/country.sii`), cross-checked in Step 4B ([SCS lane model](scs-lane-model.md#traffic-side-per-road)). Other bits unknown. |
 
 Nodes of items that cross a sector border can be stored in a neighbouring sector.
 

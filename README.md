@@ -2,7 +2,7 @@
 
 RoadPilot-Map is the map processing and geographic data infrastructure of the RoadPilot ecosystem. It reads the map data of Euro Truck Simulator 2 (ETS2) and American Truck Simulator (ATS) from the user's own local installation and turns it into structured road data for RoadPilot.
 
-> **Status: early development (Phase 1).** The archive reader, the sector file parser and a road and node model are implemented and tested. Lane geometry, junctions, curvature and map package generation are **not implemented yet**. There are no releases.
+> **Status: early development (Phase 1).** The archive reader, the sector file parser, a road and node model and a lane model (lanes per road, traffic side, driving directions) are implemented and tested. Lane geometry, junctions, curvature and map package generation are **not implemented yet**. There are no releases.
 
 Architecture documentation, format specifications, decision records and open questions are in [`docs/`](docs/README.md). An overview for new readers is in the [project wiki](https://github.com/RoadPilotHQ/RoadPilot-Map/wiki).
 
@@ -17,14 +17,15 @@ RoadPilot-Map turns ETS2 and ATS map data into structured, versioned road inform
 | HashFS v2 archive reader | `roadpilot-map-archive` | Opens official `.scs` archives read-only, validates the index, finds entries by path (CityHash64 v1.0.3, confirmed through directory listings) and reads single stored or zlib-compressed entries into memory. See [`docs/formats/hashfs-v2.md`](docs/formats/hashfs-v2.md). |
 | SCS sector parser | `roadpilot-map-formats` | Parses map sector `.base` and `.data` files of format version 907: all items with their common header and payload, all nodes, and decoded fields of roads and prefabs. See [`docs/formats/scs-sector-format.md`](docs/formats/scs-sector-format.md). |
 | Road and node model | `roadpilot-map-model`, `roadpilot-map` | Validated roads, nodes and road-to-road connections, the confirmed coordinate system and node directions, built from parsed sectors by `build_road_network`. See [`docs/formats/scs-road-geometry.md`](docs/formats/scs-road-geometry.md). |
+| Lane model | `roadpilot-map-formats`, `roadpilot-map-model`, `roadpilot-map` | Lanes per road from the road look definitions (read with a minimal text SII reader), the traffic side per road from the country of its nodes, driving directions, stored lane offsets and candidate lane transitions between connected roads. Lane widths and the exact lane order are not stored in the data and stay unknown. See [`docs/formats/scs-lane-model.md`](docs/formats/scs-lane-model.md). |
 | Development diagnostics | `roadpilot-map-cli` | `roadpilot-map doctor` checks a checkout: toolchain version, workspace, configuration files, cargo-deny and documentation. `roadpilot-map --version` prints the version. |
 
 The implementation is verified with tests on synthetic data built in code, plus opt-in tests that read a local game installation without modifying it.
 
 ## Planned
 
-- Lane model: lane count, widths, offsets and directions from the road look definitions
-- Parser for text SII definition files and for prefab descriptors (`.ppd`)
+- Lane geometry (lane positions along the road); depends on the curve formula and lane widths
+- Parser for prefab descriptors (`.ppd`) and further definitions
 - Junctions and intersections, lane-level connectivity
 - The curve between road nodes, curvature and curve radius (the curve formula is under investigation)
 - Speed limits, traffic rules, traffic lights and signs
@@ -49,8 +50,8 @@ Tests need no game installation. The test policy, including the opt-in tests aga
 | Crate | Role | Status |
 |---|---|---|
 | `roadpilot-map-archive` | Read SCS archives | Implemented (HashFS v2) |
-| `roadpilot-map-formats` | Parse game files | Partially implemented (sector files) |
-| `roadpilot-map-model` | Internal map model | Partially implemented (roads and nodes) |
+| `roadpilot-map-formats` | Parse game files | Partially implemented (sector files, lane definitions) |
+| `roadpilot-map-model` | Internal map model | Partially implemented (roads, nodes and lanes) |
 | `roadpilot-map` | Facade library | Partially implemented |
 | `roadpilot-map-cli` | Command-line interface (`roadpilot-map`) | `--version` and `doctor` |
 | `roadpilot-map-geometry`, `roadpilot-map-network`, `roadpilot-map-package` | Geometry, network, map package | Planned |
@@ -78,7 +79,8 @@ RoadPilot-Map will provide map data to the RoadPilot application through a versi
 
 | Area | Status |
 |---|---|
-| Source code | In development: archive reader, sector parser, road and node model, diagnostics |
+| Source code | In development: archive reader, sector parser, road and node model, lane model, diagnostics |
+| Lane model | Implemented: lanes, traffic side, directions, candidate transitions |
 | Lane geometry, junctions, map package | Not started |
 | Architecture | Documented in [`docs/`](docs/README.md), ADR 0001 accepted |
 | Releases | None |

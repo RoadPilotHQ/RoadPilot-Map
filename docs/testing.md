@@ -62,7 +62,7 @@ Opt-in tests against a local installation (see below) follow these extra rules:
 
 ### Local installation tests (opt-in)
 
-Such tests exist in `crates/roadpilot-map-formats/tests/real_installation.rs` (parses every sector) and `crates/roadpilot-map/tests/real_installation.rs` (builds the road network of the whole map). Every such test must follow these rules:
+Such tests exist in `crates/roadpilot-map-formats/tests/real_installation.rs` (parses every sector) and `crates/roadpilot-map/tests/real_installation.rs` (builds the road and lane network of the whole map). Every such test must follow these rules:
 
 - It is marked `#[ignore]` with a reason, so ordinary `cargo test` and CI never run it.
 - It needs the environment variable `ROADPILOT_MAP_GAME_DIR`, pointing to the game installation folder.

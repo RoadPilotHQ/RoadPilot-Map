@@ -1,10 +1,11 @@
 //! Parsers for SCS map files of Euro Truck Simulator 2 and American Truck
 //! Simulator, producing format-close records.
 //!
-//! This crate currently reads the binary **sector** files of a map
-//! (`map/<map>/sec<x><z>.base` and `.data`), format version 907. It works
-//! on byte slices and does no I/O; reading the files from the game archives
-//! is the job of `roadpilot-map-archive`.
+//! This crate reads the binary **sector** files of a map
+//! (`map/<map>/sec<x><z>.base` and `.data`), format version 907, and the few
+//! **text SII definitions** the lane model needs ([`sii`], [`definitions`]).
+//! It works on byte slices and does no I/O; reading the files from the game
+//! archives is the job of `roadpilot-map-archive`.
 //!
 //! ```no_run
 //! # fn bytes() -> (Vec<u8>, Vec<u8>) { (Vec::new(), Vec::new()) }
@@ -45,9 +46,11 @@
 //! so malformed data returns an error instead of panicking or hanging.
 
 mod cursor;
+pub mod definitions;
 mod error;
 mod items;
 mod sector;
+pub mod sii;
 mod token;
 
 pub use error::{ParseError, Result};

@@ -6,8 +6,10 @@
 //!
 //! So far it builds the road model from parsed sector files
 //! ([`build_road_network`]): road segments, nodes and the connections that
-//! follow from their references. Lanes, junctions and the map package are
-//! added in later steps, as described in `docs/architecture/`.
+//! follow from their references; and the lanes of each road from the road
+//! look, lane type and country definitions ([`build_lane_network`]).
+//! Junctions, lane geometry and the map package are added in later steps,
+//! as described in `docs/architecture/`.
 //!
 //! The parser and model crates are re-exported as [`formats`] and [`model`].
 //!
@@ -18,8 +20,10 @@
 //! RoadPilot-Map itself. It is not part of map processing.
 
 pub mod dev;
+mod lanes;
 mod roads;
 
+pub use lanes::{DefinitionsError, LaneBuildError, LaneDefinitions, build_lane_network};
 pub use roadpilot_map_formats as formats;
 pub use roadpilot_map_model as model;
 pub use roads::build_road_network;

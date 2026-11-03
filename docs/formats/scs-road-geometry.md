@@ -119,5 +119,5 @@ No structural difference was found. All rules above hold for both games; only th
 | G1 | The exact curve between two nodes: the tangent length (and whether it is a Hermite spline at all for sharp turns above 120°). Needed for lane geometry and curvature. |
 | G2 | The world unit (T3). The scale ÷ 256 and the axes are confirmed, the unit is not. |
 | G3 | What the remaining 200 bytes of the road payload contain. Some may affect geometry, for example offsets or a road-specific curve setting. |
-| G4 | Node flags and the 0.4–0.6 % of roads whose start direction points away from the end node by more than 60°. These are presumably very sharp curves, but this is not checked. |
+| G4 | Node flags (except the country IDs in bits 8–23, see [SCS lane model](scs-lane-model.md)) and the 0.4–0.6 % of roads whose start direction points away from the end node by more than 60°. These are presumably very sharp curves, but this is not checked. |
 | G5 | Which items the unresolved node links refer to, presumably `.aux` items. |

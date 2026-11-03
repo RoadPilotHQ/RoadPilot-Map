@@ -8,10 +8,10 @@ This document describes the stages that turn a local ATS or ETS2 installation in
 |---|---|
 | 1. Discover | Planned |
 | 2. Archive read | Implemented for HashFS v2 |
-| 3. Parse | Partially implemented: sector `.base` and `.data` files |
-| 4. Model | Partially implemented: roads, nodes and their connections |
+| 3. Parse | Partially implemented: sector `.base` and `.data` files, road look, lane type and country definitions |
+| 4. Model | Partially implemented: roads, nodes, their connections and lanes |
 | 5. Geometry | Planned; the curve between road nodes is under investigation |
-| 6. Network | Partially implemented: road-to-road connections only |
+| 6. Network | Partially implemented: road-to-road connections and candidate lane transitions |
 | 7. Package | Planned |
 
 ## Overview
@@ -49,7 +49,7 @@ Each stage has a typed input and a typed output. Stages do not share hidden stat
 - **Output:** raw, format-close records such as road look definitions, prefab descriptions, nodes and map items.
 - **Crate:** `roadpilot-map-formats`.
 - **Notes:** game data is treated as untrusted input. Unknown or unsupported records produce warnings, not crashes.
-- **Status:** partially implemented for sector `.base` and `.data` files, format version 907 (`parse_base`, `parse_data`; [SCS sector format](../formats/scs-sector-format.md)). Definition files (SII) and prefab descriptors (`.ppd`) are not parsed yet. Malformed input never crashes the parser; it returns a typed `ParseError`. An unknown sector item type is also an error rather than a warning, because sector items have no length field and the rest of the file cannot be located.
+- **Status:** partially implemented for sector `.base` and `.data` files, format version 907 (`parse_base`, `parse_data`; [SCS sector format](../formats/scs-sector-format.md)). A minimal text SII reader reads the road look, road template variant, lane type and country definitions ([SCS lane model](../formats/scs-lane-model.md)); other definition files and prefab descriptors (`.ppd`) are not parsed yet. Malformed input never crashes the parser; it returns a typed `ParseError`. An unknown sector item type is also an error rather than a warning, because sector items have no length field and the rest of the file cannot be located.
 
 ### 4. Model
 
@@ -57,7 +57,7 @@ Each stage has a typed input and a typed output. Stages do not share hidden stat
 - **Output:** the internal map model - nodes, road segments, prefabs, lanes and sectors with stable identifiers.
 - **Crates:** `roadpilot-map-model` (types), `roadpilot-map` (building).
 - **Notes:** resolves references between records, for example road segment to road look.
-- **Status:** partially implemented. `roadpilot-map-model` holds validated roads and nodes (`RoadNetwork`), and `roadpilot_map::build_road_network` builds it from parsed sectors ([SCS road geometry](../formats/scs-road-geometry.md)). Road looks are kept as uninterpreted token references. Prefabs, lanes and sectors are not part of the model yet.
+- **Status:** partially implemented. `roadpilot-map-model` holds validated roads and nodes (`RoadNetwork`), and `roadpilot_map::build_road_network` builds it from parsed sectors ([SCS road geometry](../formats/scs-road-geometry.md)). The lanes of each road (`LaneNetwork`) are built by `roadpilot_map::build_lane_network` from the road looks and the country of the road's nodes ([SCS lane model](../formats/scs-lane-model.md)); unconfirmed lane properties are explicit unknown states. Prefabs and sectors are not part of the model yet.
 
 ### 5. Geometry
 
@@ -77,7 +77,7 @@ Each stage has a typed input and a typed output. Stages do not share hidden stat
 - **Output:** a road graph with intersections and lane-level connections, including connections through prefabs (junctions).
 - **Crate:** `roadpilot-map-network`.
 - **Notes:** designed so a spatial index for future map matching can be added without breaking the package format.
-- **Status:** partially implemented, not yet in its own crate. `RoadNetwork` resolves road-to-road connections through shared nodes in stored direction (`successor`, `predecessor`, `connections`). Intersections, connections through prefabs and lane-level connections are planned.
+- **Status:** partially implemented, not yet in its own crate. `RoadNetwork` resolves road-to-road connections through shared nodes in stored direction (`successor`, `predecessor`, `connections`). `LaneNetwork::transition` pairs lanes across such connections as candidates by index where both roads match. Intersections, connections through prefabs and confirmed lane-level connections are planned.
 
 ### 7. Package
 

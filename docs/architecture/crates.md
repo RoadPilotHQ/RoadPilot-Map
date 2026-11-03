@@ -28,8 +28,8 @@ RoadPilot-Map/
 | Crate | Kind | Responsibility |
 |---|---|---|
 | `roadpilot-map-archive` | lib | Open HashFS v2 archives (`.scs`) read-only, find entries by path, list directories and read single entries (stored or zlib). No knowledge of map semantics. See [HashFS v2 archive reader](../formats/hashfs-v2.md). |
-| `roadpilot-map-formats` | lib | Parse game definition files and map sector files into raw, format-close records. No geometry computation. Today: sector `.base` and `.data` files, see [SCS sector format](../formats/scs-sector-format.md). |
-| `roadpilot-map-model` | lib | Internal map model: nodes, road segments, prefabs, lanes, sectors, identifiers, and the result types of the geometry and network stages. Plain data types, no I/O. Today: roads, nodes and their connections, see [SCS road geometry](../formats/scs-road-geometry.md). |
+| `roadpilot-map-formats` | lib | Parse game definition files and map sector files into raw, format-close records. No geometry computation. Today: sector `.base` and `.data` files, see [SCS sector format](../formats/scs-sector-format.md), and a minimal text SII reader for the road look, lane type and country definitions, see [SCS lane model](../formats/scs-lane-model.md). |
+| `roadpilot-map-model` | lib | Internal map model: nodes, road segments, prefabs, lanes, sectors, identifiers, and the result types of the geometry and network stages. Plain data types, no I/O. Today: roads, nodes and their connections, see [SCS road geometry](../formats/scs-road-geometry.md), and lanes with candidate lane transitions, see [SCS lane model](../formats/scs-lane-model.md). |
 | `roadpilot-map-geometry` | lib | Road and lane curves, lane widths and offsets, sampling, curvature and curve radius. |
 | `roadpilot-map-network` | lib | Road graph, intersections, lane-level connectivity, and later a spatial index for map matching. |
 | `roadpilot-map-package` | lib | Map package manifest and data format, versioning, writer and reader. |
