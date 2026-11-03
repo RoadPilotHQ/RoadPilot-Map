@@ -172,7 +172,7 @@ For each game, the first lane of each cell of a 3 × 3 grid over the map was use
 
 - A route was found in all nine regions in both games. The routes have 1 to 1,239 edges, and all of them use candidate edges (between 1 and 1,136).
 - **Confirmed-only reachability is 1 node** from every lane start: nothing beyond the start itself. Confirmed routes exist only inside a prefab, from an input slot to an output slot (checked with a stored prefab movement as a route).
-- The reachable set with candidates is small compared with the graph: 4 to about 23,000 nodes of about 1.3 million. Why was not analysed (NV3); the issue lists above name some causes (roads without a known traffic side, unpaired lanes, unpaired prefab arms, unknown joints), but their share is not measured.
+- The reachable set with candidates is small compared with the graph: 4 to about 23,000 nodes of about 1.3 million. The [connectivity audit](connectivity-audit.md) (Step 6.1) explains it: the reach is limited by the size of the connected pieces, which are cut by roads without a known traffic side and by directly joined prefabs (unknown edges). No implementation bug was found.
 - Every checked route is connected from start to goal, uses allowed edges only, and is reproducible.
 - Nine searches including a full reachability scan each took about 130 ms in total in both games.
 
@@ -192,9 +192,11 @@ The earlier questions G1–G5, LM1–LM6 and PJ1–PJ8 are unchanged; see [SCS r
 
 | ID | Question |
 |---|---|
-| NV1 | Whether the traffic-side rule that gives lane directions can be confirmed (LM4, LM5). Then driving along a lane could become confirmed. |
+| NV1 | Whether the traffic-side rule that gives lane directions can be confirmed (LM4, LM5). Then driving along a lane could become confirmed. Tested against prefab slots in the [connectivity audit](connectivity-audit.md): 99.3–99.5 % agree, a few contradictions are unexplained, so `Candidate` stays. |
 | NV2 | A physical route cost needs the curve formula (G1) and the unit (G2/T3). Until then the cost is not a distance. |
-| NV3 | Why the reachable set from a lane is small. A measurement of the causes (components, dead ends, unpaired prefab arms) is needed. |
+| NV3 | Answered in the [connectivity audit](connectivity-audit.md): small components, caused by roads without a traffic side (NV7) and directly joined prefabs (PJ4). |
 | NV4 | Where positions come from for start and goal (a spatial index with a defined matching rule). No proximity matching is done today. |
-| NV5 | What the items behind `NodeLinksToOtherItem` are, and whether any of them carries connections. |
+| NV5 | Answered in the [connectivity audit](connectivity-audit.md): no road end and no prefab node links to such an item, so they do not affect connectivity. |
 | NV6 | Whether and how traffic rules and signals restrict a movement (PJ1, PJ5). |
+| NV7 | How the game assigns a traffic side to the 14 % of roads whose nodes name no country (35,948 in ETS2, 25,280 in ATS). They are not in the graph and cut the network into pieces. |
+| NV8 | Whether the contradicting prefabs of the NV1 test (8 in ETS2, 25 in ATS) show an error in the node mapping or an exception of the direction rule. |

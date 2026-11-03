@@ -255,7 +255,7 @@ The format and all rules are identical. Differences are in the data only:
 | PJ1 | Meaning of the curve field at offset 116, and which semaphore (if any) governs a curve. |
 | PJ2 | Why 1.2 % of instances do not fit the origin mapping (mirrored, scaled or differently rotated prefabs?). |
 | PJ3 | How the full `tr_semaphore_profile` is chosen from the semaphore token and the `prefab_model`. |
-| PJ4 | How lanes continue across two directly joined prefabs (slot pairing at a shared node). |
+| PJ4 | How lanes continue across two directly joined prefabs (slot pairing at a shared node). 13,457 joints in ETS2 and 16,162 in ATS; the slot counts are consistent in both directions for 87 % and 88 % of them. The joints are the second main cause of the small connected pieces of the navigation graph ([connectivity audit](../navigation/connectivity-audit.md)). |
 | PJ5 | Meaning of `traffic_rule_data` rules, and how prefab-wide input and output rules relate to curve rules. |
 | PJ6 | Content of the undecoded descriptor blocks (signs, spawn, terrain, map points, triggers, intersections, last block), in particular whether map points or intersections are needed. |
 | PJ7 | What the items behind unresolved node links are (they occur in `.aux` files). |

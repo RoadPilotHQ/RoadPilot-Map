@@ -28,6 +28,7 @@ This folder contains the architecture documentation, decision records and plans 
 ### Navigation
 
 - [Navigation graph and route planning](navigation/navigation-graph.md) - the directed graph of lanes and prefab slots, connection status and origin, the two routing modes, the algorithmic cost model and measurements.
+- [Navigation graph connectivity audit](navigation/connectivity-audit.md) - why the graph has small connected pieces, classification of the causes, and the evidence for the lane direction rule (Step 6.1).
 
 ### Research
 
