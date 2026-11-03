@@ -17,6 +17,10 @@ This folder contains the architecture documentation, decision records and plans 
 
 - [Test and fixture policy](testing.md) - test categories, synthetic fixtures and game data restrictions.
 
+### Research
+
+- [SCS map data inventory](research/scs-map-data-inventory.md) - the minimal ATS/ETS2 map data RoadPilot needs, with sources, priorities and open questions.
+
 ### Decisions
 
 - [Architecture decision records](adr/README.md) - how decisions are recorded, and the index of all ADRs.
