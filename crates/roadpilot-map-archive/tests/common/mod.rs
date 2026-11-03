@@ -94,6 +94,9 @@ struct Item {
 pub struct TestArchive {
     files: BTreeMap<String, (Vec<u8>, Method)>,
     unlisted_dirs: Vec<String>,
+    /// Raw names removed from / added to generated listings: `(dir, name)`.
+    hidden_names: Vec<(String, String)>,
+    added_names: Vec<(String, String)>,
     extra: Vec<Item>,
 }
 
@@ -121,6 +124,30 @@ impl TestArchive {
     /// real archives without a root listing.
     pub fn without_listing(mut self, dir: &str) -> Self {
         self.unlisted_dirs.push(dir.to_owned());
+        self
+    }
+
+    /// Removes `path` from its parent's listing. The entry itself stays, so
+    /// it is only reachable through its hash, like an orphaned subtree.
+    pub fn hide_in_listing(mut self, path: &str) -> Self {
+        let (dir, name) = path.rsplit_once('/').unwrap_or(("", path));
+        let is_dir = self
+            .files
+            .keys()
+            .any(|f| f.starts_with(&format!("{path}/")));
+        let raw = if is_dir {
+            format!("/{name}")
+        } else {
+            name.to_owned()
+        };
+        self.hidden_names.push((dir.to_owned(), raw));
+        self
+    }
+
+    /// Adds a raw name (`/` prefix for a subdirectory) to the generated
+    /// listing of `dir`, whether or not an entry with that path exists.
+    pub fn add_listing_name(mut self, dir: &str, raw_name: &str) -> Self {
+        self.added_names.push((dir.to_owned(), raw_name.to_owned()));
         self
     }
 
@@ -298,6 +325,12 @@ impl TestArchive {
         dirs.into_iter()
             .filter(|(dir, _)| !self.unlisted_dirs.contains(dir))
             .map(|(dir, mut names)| {
+                names.retain(|n| !self.hidden_names.contains(&(dir.clone(), n.clone())));
+                for (d, n) in &self.added_names {
+                    if *d == dir && !names.contains(n) {
+                        names.push(n.clone());
+                    }
+                }
                 names.sort();
                 Item {
                     hash: path_hash(&dir).expect("valid test path"),
