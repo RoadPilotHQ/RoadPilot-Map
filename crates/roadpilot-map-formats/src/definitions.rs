@@ -47,6 +47,26 @@ pub struct RoadTemplateVariantDef {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TrafficLaneDef {
     pub name: String,
+    /// `traffic_rules[]`: names of `traffic_rule_data` units.
+    pub traffic_rules: Vec<String>,
+}
+
+/// A traffic rule (`traffic_rule_data` in `def/world/traffic_rules.sii`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrafficRuleDef {
+    pub name: String,
+    /// `rule` as stored. Its meaning is not interpreted.
+    pub rule: Option<String>,
+}
+
+/// A prefab model (`prefab_model` in `def/world/prefab*.sii`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PrefabModelDef {
+    /// Unit name, `prefab.<token>`.
+    pub name: String,
+    /// `prefab_desc`: archive path of the `.ppd` descriptor, without a
+    /// leading slash.
+    pub descriptor: String,
 }
 
 /// A country (`country_data` in `def/country.sii`).
@@ -153,6 +173,37 @@ impl TrafficLaneDef {
     pub fn from_unit(unit: &SiiUnit) -> Option<Self> {
         (unit.class == "traffic_lane_data").then(|| Self {
             name: unit.name.clone(),
+            traffic_rules: unit.values("traffic_rules").to_vec(),
+        })
+    }
+}
+
+impl TrafficRuleDef {
+    /// Reads a `traffic_rule_data` unit; `None` for other classes.
+    #[must_use]
+    pub fn from_unit(unit: &SiiUnit) -> Option<Self> {
+        (unit.class == "traffic_rule_data").then(|| Self {
+            name: unit.name.clone(),
+            rule: unit.value("rule").map(str::to_owned),
+        })
+    }
+}
+
+impl PrefabModelDef {
+    /// Reads a `prefab_model` unit; `None` for other classes.
+    ///
+    /// # Errors
+    ///
+    /// [`DefinitionError`] if `prefab_desc` is missing.
+    pub fn from_unit(unit: &SiiUnit) -> Option<Result<Self, DefinitionError>> {
+        (unit.class == "prefab_model").then(|| {
+            let descriptor = unit
+                .value("prefab_desc")
+                .ok_or_else(|| error(unit, "prefab_desc is missing"))?;
+            Ok(Self {
+                name: unit.name.clone(),
+                descriptor: descriptor.trim_start_matches('/').to_owned(),
+            })
         })
     }
 }
@@ -241,7 +292,33 @@ mod tests {
         let v = RoadTemplateVariantDef::from_unit(&v).expect("variant");
         assert_eq!(v.lanes_left, Some(vec!["t.a".to_owned()]));
         assert_eq!(v.lanes_right, None);
-        assert!(TrafficLaneDef::from_unit(&unit("traffic_lane_data", "t.a", &[])).is_some());
+        let lane = unit(
+            "traffic_lane_data",
+            "t.a",
+            &[("traffic_rules", &["traffic_rule.x"])],
+        );
+        let lane = TrafficLaneDef::from_unit(&lane).expect("lane type");
+        assert_eq!(lane.traffic_rules, ["traffic_rule.x"]);
+        let rule = unit(
+            "traffic_rule_data",
+            "traffic_rule.x",
+            &[("rule", &["no_entry"])],
+        );
+        let rule = TrafficRuleDef::from_unit(&rule).expect("rule");
+        assert_eq!(rule.rule.as_deref(), Some("no_entry"));
+        let model = unit(
+            "prefab_model",
+            "prefab.p",
+            &[("prefab_desc", &["/prefab/x.ppd"])],
+        );
+        let model = PrefabModelDef::from_unit(&model)
+            .expect("model")
+            .expect("valid");
+        assert_eq!(model.descriptor, "prefab/x.ppd");
+        assert!(matches!(
+            PrefabModelDef::from_unit(&unit("prefab_model", "p", &[])),
+            Some(Err(_))
+        ));
         let c = unit(
             "country_data",
             "country.data.x",

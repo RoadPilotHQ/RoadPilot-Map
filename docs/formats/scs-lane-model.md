@@ -6,7 +6,9 @@ Status: **implemented** (Phase 1, Step 4B):
 - `crates/roadpilot-map-model`: lane types (`lanes`),
 - `crates/roadpilot-map`: `LaneDefinitions` and `build_lane_network`.
 
-It builds on [SCS road geometry](scs-road-geometry.md) and [SCS sector format](scs-sector-format.md). Junctions (prefabs), lane geometry and traffic rules are not part of this step.
+It builds on [SCS road geometry](scs-road-geometry.md) and [SCS sector format](scs-sector-format.md). Lane geometry and traffic rules are not part of this step. Junctions (prefabs) and lane movements through them are described in [SCS prefabs and junctions](scs-prefab-junctions.md) (Step 5).
+
+ATS was updated by the game launcher after this step. The ATS figures below come from the previous version; the current version differs slightly (for example 224,868 roads and 212 road looks).
 
 Evidence levels: **Confirmed** holds for all inspected data. **Measured** gives a stated share. **Inferred** follows from confirmed facts but was not tested on its own. **Unknown** is not established.
 
@@ -102,14 +104,14 @@ The traffic side of a road follows from the country of its two nodes and the cou
 |---|---|
 | With right-hand traffic, lanes on the **right** side run in the stored direction (start to end node), lanes on the **left** side against it. | Measured on divided carriageways. For one-way roads with lanes only on the right, the nearest oncoming one-way road lies on the **left** of the stored direction in 98.4 % (ETS2, 22,792 pairs) and 97.9 % (ATS, 26,584 pairs) of cases. That is right-hand traffic travelling in the stored direction. |
 | With left-hand traffic the sides are mirrored: **left** lanes run in the stored direction. | Measured on a small sample. The left-only roads use the UK one-way highway and exit road looks; all 17 matched pairs have the oncoming road on the **right**. No right-only one-way road lies in the left-hand country. |
-| Two-way roads follow the same rule on both sides. | Inferred from the side rule above; not tested separately. |
+| Two-way roads follow the same rule on both sides. | Inferred from the side rule above. Supported in Step 5: at prefab nodes, the road lanes in each direction match the prefab's input and output slots in 98.6 % of cases ([SCS prefabs and junctions](scs-prefab-junctions.md#road-lanes-at-a-prefab)). |
 | Without a known traffic side, the direction is unknown. | Model rule |
 
 The stored road direction is not a driving direction. A road with lanes on both sides is driven both ways, and a one-way road is driven in the direction its lanes give.
 
 ## Lane transitions between roads
 
-- **Confirmed:** road records store no lane-to-lane connections. Junction lanes are described in prefab descriptors (`.ppd`), which are not read yet.
+- **Confirmed:** road records store no lane-to-lane connections. Junction lanes are described in prefab descriptors (`.ppd`), which are read since Step 5 ([SCS prefabs and junctions](scs-prefab-junctions.md)).
 - **The model** pairs lanes across a road-to-road connection (end node of one road = start node of the next) only as **candidates by index**, separately per direction. This requires that both roads have resolved lanes, the same known traffic side and the same number of lanes in that direction. Otherwise the transition is `Unknown`, with the reason.
 - Whether index-paired lanes are really connected in the game is **unknown** (LM6), because the index order itself is not confirmed. Candidates never connect lanes of opposite directions.
 
@@ -124,7 +126,7 @@ The distinction the model keeps:
 
 1. A **road connection** is a shared node, in stored direction (`RoadNetwork::connections`).
 2. A **lane transition** is a candidate pairing of lanes (`LaneNetwork::transition`).
-3. **Whether a vehicle can actually drive** from one lane to the next is not modelled. It needs junction data and traffic rules.
+3. **Whether a vehicle can actually drive** from one lane to the next is not modelled. Movements through junctions are modelled in Step 5 (internal movements confirmed, road lane pairing as candidates); traffic rules are referenced but not interpreted.
 4. The **driving direction** of each lane comes from the traffic side (above).
 
 ## Model
@@ -166,7 +168,7 @@ The structure is identical. Differences are in the data only: ETS2 has one left-
 | LM3 | Meaning of the `lane_offsets` pairs and of `road_offset`; lane widths of template looks (their geometry is in `.pmd` templates). |
 | LM4 | Which of the two node country bytes belongs to which side of the node. |
 | LM5 | The effect of a look's `lane_direction` when it contradicts the country. |
-| LM6 | Real lane continuity across road connections (lane drops, merges, index order); junction lanes come from `.ppd` (later step). |
+| LM6 | Real lane continuity across road connections (lane drops, merges, index order). Junction lanes are read from `.ppd` since Step 5; lane continuity at prefab arms with a lane count mismatch is PJ8. |
 | — | Roads without a country (14.3 % in ETS2, 11.3 % in ATS): which traffic side applies there. |
 
 Geometry questions (G1 and following) are in [SCS road geometry](scs-road-geometry.md).

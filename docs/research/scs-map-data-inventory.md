@@ -91,8 +91,8 @@ No sector file name appears in more than one archive: base and DLC sectors **add
 | Item | Finding | Class | Confidence |
 |---|---|---|---|
 | `.ppd` files | ETS2 about 7,800, ATS about 4,600, mostly under `prefab/` and `prefab2/` in `base.scs` and the map DLCs. Total about 34 MB (ETS2) and 15 MB (ATS). | **A** | Verified (location, count) |
-| Encoding | Binary. Leading u32 is 25 in every inspected `.ppd` (base, DLC and `road_template/`). | | Verified (value), Partial (meaning: likely version) |
-| Content | Believed to hold the prefab's control nodes, internal lane curves (paths for driving through junctions), semaphore positions and map points. Not inspected beyond the leading word. | | Partial (community knowledge) |
+| Encoding | Binary. Leading u32 is 25 in every inspected `.ppd` (base, DLC and `road_template/`). **Step 5:** it is the format version; the header holds 11 counts and 12 block offsets, and the block layout holds for every referenced descriptor ([SCS prefabs and junctions](../formats/scs-prefab-junctions.md)). | | Verified |
+| Content | **Step 5:** nodes with input and output lane slots, navigation curves (internal lanes) with next and previous links and an optional traffic rule, semaphores with position, rotation and profile token; further blocks (signs, spawn points, terrain, map points, triggers, intersections, one unknown block) are counted but not decoded ([SCS prefabs and junctions](../formats/scs-prefab-junctions.md)). | | Verified (nodes, curves, semaphores), Unknown (other blocks) |
 | Reference | `prefab_model` units in `def/world/prefab*.sii` reference their `.ppd` path. 4,242 of 4,246 (ETS2) and 1,957 of 1,961 (ATS) references point to an existing entry. | | Verified |
 | `.pmd`, `.pmg`, `.pma`, `.pmc`, `.tobj` next to them | 3D model, geometry, animation, collision and texture data. ETS2 `.pmg` alone is about 3.1 GB. | **C** | Verified (by extension and metadata) |
 
@@ -132,18 +132,18 @@ Note on ferries: `def/ferry/` holds ferry connections. They are only needed if R
 | Lane direction | `road_look` (sides, lane direction), `country_data` (left-side traffic) | Left and right lanes per side; the left-side traffic attribute is set in one ETS2 country definition and in no ATS one | A | Partial |
 | Road curvature | Derived from road curves | Not stored; computed from node positions and directions | A | Partial (depends on T2) |
 | Lane width | `road_look` sizes and offsets, `road_def` | No explicit lane width attribute found; must be derived from offsets or sizes | A | Unknown |
-| Lane connections and transitions | Road nodes (sector items) + `.ppd` lane curves | Connectivity believed to be via shared node IDs; lane-level links inside prefabs | A | Partial |
-| Junctions | Prefab items (sectors) + `prefab_model` + `.ppd` | Junction placement in sectors, junction layout in `.ppd` | A | Partial |
+| Lane connections and transitions | Road nodes (sector items) + `.ppd` lane curves | Connectivity via shared node IDs (Step 4A); lane-level links inside prefabs are stored curve links (Step 5); road lanes pair with prefab slots only by index ([SCS prefabs and junctions](../formats/scs-prefab-junctions.md)) | A | Verified (inside prefabs), Partial (road lane to slot) |
+| Junctions | Prefab items (sectors) + `prefab_model` + `.ppd` | A junction is a prefab instance; its nodes map to descriptor nodes through the stored origin (98.8 %); larger junctions are prefabs joined node to node ([SCS prefabs and junctions](../formats/scs-prefab-junctions.md)) | A | Verified (placement, attachment), Partial (node mapping, prefab-to-prefab lanes) |
 | Route network | Road and prefab items, nodes | Graph built from road segments and prefabs connected by nodes | A | Partial |
 | Routing cost attributes | `road_look`, `prefab_model`, `map_data` | Travel-time factors, "GPS avoid", navigation penalties | B | Verified (attributes), Partial (semantics) |
 | Positions and coordinates | Sector items, `.mbd` | World positions per node; units and scale not yet confirmed | A | Partial (T3) |
-| Traffic light positions | `.ppd` semaphore entries; `prefab_model` semaphore profile | Static positions within prefabs; profile per prefab | B | Partial |
-| Traffic light to lane association | `.ppd` (semaphore and lane curve links) | Believed to link curves to semaphores; not yet inspected | B | Unknown |
+| Traffic light positions | `.ppd` semaphore entries; `prefab_model` semaphore profile | Static positions and rotations within prefabs (Step 5); profile token per semaphore, full profile selection unknown (PJ3) | B | Verified (positions), Partial (profile) |
+| Traffic light to lane association | `.ppd` (semaphore and lane curve links) | Step 5: no curve field was found that names a semaphore; the curve field at offset 116 is not a semaphore index (PJ1) | B | Unknown |
 | Traffic light timing (static) | `tr_semaphore_profile` | Type, cycle and interval values | B | Verified (attributes) |
 | Speed limits | `road_look` lanes → `traffic_lane_data` speed class → `country_speed_limit` | Per lane type and vehicle class; urban and maximum limits | A | Verified (reference chain), Partial (urban rule, local overrides) |
 | Road categories | `traffic_lane_data` (rank, speed class), `prefab_model` category | Lane rank and speed class | A | Verified (attributes) |
 | Road signs and restrictions | Sign items (sector file unknown, possibly `.aux`) + `sign_model` traffic rule + `traffic_rule_data` | Signs that carry a rule (e.g. speed or prohibition) | B | Partial (definitions), Unknown (sector records) |
-| Turn restrictions | `prefab_model` traffic rules, `.ppd` curve flags | Rule references on prefab inputs and outputs | B | Partial |
+| Turn restrictions | `prefab_model` traffic rules, `.ppd` curve traffic rules | Step 5: every non-zero curve rule names a `traffic_rule_data` unit; rule meaning and prefab-wide rules not interpreted (PJ5) | B | Verified (references), Unknown (semantics) |
 
 Verified reference checks (counts from the local installation):
 
@@ -233,18 +233,18 @@ By size, the required data is a small part of the installation: about 0.7 GB (ET
 | ID | Question | Blocks |
 |---|---|---|
 | M1 | Binary layout of sector files with leading value 907: header, item record types, and which item types are in `.base`, `.data` and `.aux`. **Mostly resolved for `.base` and `.data` in Step 3** ([SCS sector format](../formats/scs-sector-format.md)): 23 item types with confirmed lengths, nodes, and `.data` as one entry per road and prefab. Open: `.data` entry contents, `.aux`. | Parsing roads, prefabs, nodes, signs |
-| M2 | Binary layout of `.ppd` with leading value 25: nodes, lane curves, semaphores, curve-to-semaphore links. | Junctions, traffic lights |
+| M2 | Binary layout of `.ppd` with leading value 25: nodes, lane curves, semaphores, curve-to-semaphore links. **Mostly resolved in Step 5** ([SCS prefabs and junctions](../formats/scs-prefab-junctions.md)): header, block layout, nodes, curves and semaphores. Open: curve-to-semaphore links (PJ1) and the other blocks (PJ6). | Junctions, traffic lights |
 | M3 | Road curve representation between two nodes (T2), and how lane positions are derived from `road_look` offsets. | Lane geometry, curvature |
 | M4 | Source of lane width: fixed value, derived from offsets and road size, or from template variants. **Step 4B:** no per-lane width is stored in road looks or lane types; non-template looks store only a side size. See [SCS lane model](../formats/scs-lane-model.md). | Lane width |
 | M5 | How sector items reference definitions (name, hashed token, or index). **Resolved for roads and prefabs in Step 3:** base-38 tokens that name `road_look` and `prefab_model` units. | Linking map items to definitions |
-| M6 | How the semaphore profile variant and the traffic rule are chosen when a prefab uses only part of a unit name. | Traffic lights, turn rules |
+| M6 | How the semaphore profile variant and the traffic rule are chosen when a prefab uses only part of a unit name. **Step 5:** curve traffic rules name full `traffic_rule_data` units; the semaphore profile remains open (PJ3). | Traffic lights, turn rules |
 | M7 | Loading order of `def/world/<type>.<suffix>.sii` files and unit-level overrides by DLCs (T4). | Correct definitions with DLCs |
 | M8 | When the urban speed limit applies (city area, road attribute or sign), and how sign rules override the country limit. | Speed limits |
 | M9 | Meaning of the `.mbd` and `.desc` contents, and whether they are needed. | Discovery, sector handling |
 | M10 | World units, axis orientation and scale (T3). | All geometry |
 | M11 | Whether sign items are needed from `.aux`, given that telemetry already reports a speed limit at runtime. | Scope of `.aux` |
-| M12 | 4 `prefab_model` references per game point to no listed `.ppd`. Unused definitions, or entries in another archive? | Completeness check |
-| M13 | Community documentation of sector and `.ppd` layouts exists. Its license must be reviewed (L3) before it is used as a reference. **Done for the sector format:** ts-map (MIT) used as a reference, TruckLib (GPL-2.0) not used. | M1, M2 |
+| M12 | 4 `prefab_model` references per game point to no listed `.ppd`. Unused definitions, or entries in another archive? **Step 5:** no prefab item uses these models; every used model's descriptor exists. | Completeness check |
+| M13 | Community documentation of sector and `.ppd` layouts exists. Its license must be reviewed (L3) before it is used as a reference. **Done for the sector format and `.ppd`:** ts-map (MIT) used as a reference (for `.ppd` only the header and node record), TruckLib (GPL-2.0) not used. | M1, M2 |
 
 The installed game versions were not recorded during this step. Supported versions are tracked as T8.
 

@@ -13,9 +13,15 @@
 //! and candidate lane transitions between connected roads. Unconfirmed
 //! values are explicit states, never defaults.
 //!
-//! Not modelled yet: junctions (prefabs), curves between nodes, lane
-//! geometry, speed limits. See `docs/formats/scs-road-geometry.md` and
-//! `docs/formats/scs-lane-model.md`.
+//! It also holds **prefabs** (Phase 1, Step 5): prefab definitions and
+//! instances, the roads and prefabs attached to each prefab node, the stored
+//! internal lane movements with their traffic rules and static traffic
+//! lights, and candidate road-lane movements through a prefab. A junction is
+//! a prefab instance; there is no separate junction record.
+//!
+//! Not modelled yet: curves between nodes, lane geometry, speed limits,
+//! signal states. See `docs/formats/scs-road-geometry.md`,
+//! `docs/formats/scs-lane-model.md` and `docs/formats/scs-prefab-junctions.md`.
 //!
 //! ```
 //! use roadpilot_map_model::*;
@@ -50,6 +56,7 @@
 mod geometry;
 mod lanes;
 mod network;
+mod prefabs;
 
 pub use geometry::{Position, RoadGeometry, Rotation};
 pub use lanes::{
@@ -59,4 +66,10 @@ pub use lanes::{
 };
 pub use network::{
     ModelError, Node, NodeId, NodeLink, NodeRoads, Road, RoadConnection, RoadId, RoadNetwork,
+};
+pub use prefabs::{
+    ArmIssue, ArmLink, LaneMovement, MovementStatus, PREFAB_LANE_SLOTS, PrefabArm, PrefabCurve,
+    PrefabDefinition, PrefabDefinitionNode, PrefabError, PrefabId, PrefabInstance,
+    PrefabLaneMovements, PrefabMovement, PrefabNetwork, PrefabResolution, PrefabSemaphore, RuleRef,
+    SlotDirection,
 };

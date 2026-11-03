@@ -1,5 +1,5 @@
-//! Opt-in tests: build the road and lane model of a whole local ETS2 or ATS
-//! map.
+//! Opt-in tests: build the road, lane and prefab model of a whole local ETS2
+//! or ATS map.
 //!
 //! Ignored by default and never run in CI. Reads the archives read-only,
 //! keeps everything in memory, checks properties only and prints counts
@@ -16,10 +16,13 @@ use std::path::PathBuf;
 use roadpilot_map::formats::sii::{SiiUnit, parse_sii};
 use roadpilot_map::formats::{ItemData, parse_base};
 use roadpilot_map::model::{
-    LaneConfig, LaneDirection, LaneTransition, LaneType, NodeLink, OffsetsState, RoadId, RoadSide,
-    TrafficSideState,
+    ArmIssue, ArmLink, LaneConfig, LaneDirection, LaneTransition, LaneType, MovementStatus,
+    NodeLink, OffsetsState, PrefabResolution, RoadId, RoadSide, RuleRef, TrafficSideState,
 };
-use roadpilot_map::{LaneDefinitions, build_lane_network, build_road_network};
+use roadpilot_map::{
+    LaneDefinitions, PrefabDefinitions, build_lane_network, build_prefab_network,
+    build_road_network,
+};
 use roadpilot_map_archive::Archive;
 
 fn game_dir() -> PathBuf {
@@ -140,6 +143,12 @@ fn builds_the_road_network_of_the_installation() {
 /// `traffic_lane*` file in `def/world` and `def/country.sii` of every
 /// archive, with `@include` resolved relative to the including file.
 fn lane_definition_units(dir: &PathBuf) -> Vec<SiiUnit> {
+    definition_units(dir, &["road_look", "traffic_lane"], true)
+}
+
+/// The `.sii` files in `def/world` of every archive whose name starts with
+/// one of `prefixes`, plus `def/country.sii` if `country` is set.
+fn definition_units(dir: &PathBuf, prefixes: &[&str], country: bool) -> Vec<SiiUnit> {
     let mut archives: Vec<PathBuf> = std::fs::read_dir(dir)
         .expect("installation folder is readable")
         .filter_map(|e| e.ok().map(|e| e.path()))
@@ -157,13 +166,11 @@ fn lane_definition_units(dir: &PathBuf) -> Vec<SiiUnit> {
                 children
                     .iter()
                     .filter(|c| !c.is_dir && c.name.ends_with(".sii"))
-                    .filter(|c| {
-                        c.name.starts_with("road_look") || c.name.starts_with("traffic_lane")
-                    })
+                    .filter(|c| prefixes.iter().any(|p| c.name.starts_with(p)))
                     .map(|c| format!("def/world/{}", c.name)),
             );
         }
-        if archive.find("def/country.sii").ok().flatten().is_some() {
+        if country && archive.find("def/country.sii").ok().flatten().is_some() {
             files.push("def/country.sii".to_owned());
         }
         for file in files {
@@ -296,5 +303,188 @@ fn builds_the_lane_network_of_the_installation() {
             .keys()
             .any(|k| k.starts_with("lanes unresolved: Missing")),
         "every look, variant and lane type resolves"
+    );
+}
+
+/// Every archive of the installation, in file name order.
+fn open_archives(dir: &PathBuf) -> Vec<Archive> {
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(dir)
+        .expect("installation folder is readable")
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("scs")))
+        .collect();
+    paths.sort();
+    paths.iter().filter_map(|p| Archive::open(p).ok()).collect()
+}
+
+fn resolution_key(r: &PrefabResolution) -> &'static str {
+    match r {
+        PrefabResolution::Resolved => "resolved",
+        PrefabResolution::MissingModel => "model missing",
+        PrefabResolution::MissingDescriptor(_) => "descriptor missing",
+        PrefabResolution::InvalidDescriptor(_) => "descriptor invalid",
+        PrefabResolution::NodeCountMismatch { .. } => "node count differs",
+        PrefabResolution::OriginOutOfRange(_) => "origin out of range",
+        PrefabResolution::NodeGeometryMismatch => "node geometry differs",
+    }
+}
+
+fn issue_key(issue: ArmIssue) -> &'static str {
+    match issue {
+        ArmIssue::NoRoad => "no road attached",
+        ArmIssue::PrefabUnresolved => "prefab unresolved",
+        ArmIssue::RoadLanesUnknown => "road lanes or traffic side unknown",
+        ArmIssue::LaneCountMismatch { .. } => "lane count differs from slot count",
+    }
+}
+
+#[test]
+#[ignore = "reads a local game installation; set ROADPILOT_MAP_GAME_DIR and run with --ignored"]
+fn builds_the_prefab_network_of_the_installation() {
+    let dir = game_dir();
+    let files = sector_files(&dir);
+    let sectors: Vec<_> = files
+        .iter()
+        .map(|f| parse_base(f).expect("sector parses"))
+        .collect();
+    let network = build_road_network(&sectors).expect("road network builds");
+    let lane_defs =
+        LaneDefinitions::from_units(&lane_definition_units(&dir)).expect("lane definitions");
+    let lanes = build_lane_network(&network, &sectors, &lane_defs).expect("lane network builds");
+    let units = definition_units(&dir, &["prefab", "traffic_rules"], false);
+    let defs = PrefabDefinitions::from_units(&units).expect("prefab definitions are consistent");
+    // A descriptor is read from the last archive (in name order) that has it.
+    let archives = open_archives(&dir);
+    let load = |path: &str| archives.iter().rev().find_map(|a| a.read_file(path).ok());
+    let prefabs = build_prefab_network(&network, &sectors, &defs, load).expect("prefabs build");
+
+    // Reproducible: a second build gives the same result.
+    assert_eq!(
+        build_prefab_network(&network, &sectors, &defs, load).expect("prefabs build"),
+        prefabs
+    );
+
+    let mut stats: BTreeMap<String, usize> = BTreeMap::new();
+    let mut add = |key: String, n: usize| *stats.entry(key).or_default() += n;
+    let prefab_items = sectors
+        .iter()
+        .flat_map(|s| &s.items)
+        .filter(|i| matches!(i.data, ItemData::Prefab(_)))
+        .count();
+    assert!(prefab_items > 0);
+    assert_eq!(prefabs.instances().count(), prefab_items);
+
+    for inst in prefabs.instances() {
+        add(
+            format!("instances: {}", resolution_key(&inst.resolution)),
+            1,
+        );
+        let resolved = inst.resolution == PrefabResolution::Resolved;
+        let def = prefabs.definition(&inst.model).filter(|_| resolved);
+        assert_eq!(resolved, def.is_some());
+
+        let arms = prefabs.arms(&network, inst.id);
+        assert_eq!(arms.len(), inst.nodes.len());
+        for arm in &arms {
+            // The node mapping is a bijection between instance and definition.
+            assert_eq!(arm.definition_node.is_some(), resolved);
+            if let Some(d) = arm.definition_node {
+                assert_eq!(inst.instance_node(d), Some(arm.index));
+            }
+            let key = match arm.link {
+                ArmLink::Road {
+                    road,
+                    road_ends_here,
+                } => {
+                    let r = network.road(road).expect("road exists");
+                    let node = if road_ends_here {
+                        r.end_node
+                    } else {
+                        r.start_node
+                    };
+                    assert_eq!(node, arm.node, "the road ends or starts at the prefab node");
+                    "road"
+                }
+                ArmLink::Prefab(other) => {
+                    assert_ne!(other, inst.id);
+                    "prefab"
+                }
+                ArmLink::Item(_) => "other item",
+                ArmLink::Unresolved(_) => "unresolved UID",
+                ArmLink::None => "nothing",
+            };
+            add(format!("prefab nodes attached to: {key}"), 1);
+        }
+
+        let movements = prefabs.movements(inst.id);
+        let Some(def) = def else {
+            assert!(movements.is_empty(), "no movements for unresolved prefabs");
+            continue;
+        };
+        add(
+            "semaphores (static), summed over resolved instances".to_owned(),
+            def.semaphores.len(),
+        );
+        if !def.semaphores.is_empty() {
+            add("resolved instances with static semaphores".to_owned(), 1);
+        }
+        let road_arms = arms
+            .iter()
+            .filter(|a| matches!(a.link, ArmLink::Road { .. }))
+            .count();
+        add(
+            "road arm sides of resolved prefabs (input and output)".to_owned(),
+            2 * road_arms,
+        );
+        for m in &movements {
+            let from = &def.nodes[inst.definition_node(m.from_arm).expect("mapped")];
+            let to = &def.nodes[inst.definition_node(m.to_arm).expect("mapped")];
+            assert!(from.input_slots[m.from_slot].is_some());
+            assert!(to.output_slots[m.to_slot].is_some());
+            if !m.traffic_rules.is_empty() {
+                add("internal movements with a traffic rule".to_owned(), 1);
+            }
+            for rule in &m.traffic_rules {
+                assert!(
+                    matches!(rule, RuleRef::Resolved(_)),
+                    "every traffic rule resolves"
+                );
+            }
+        }
+        add("internal movements (confirmed)".to_owned(), movements.len());
+
+        let lane_moves = prefabs.lane_movements(&network, &lanes, inst.id);
+        let road_at = |i: usize| match arms[i].link {
+            ArmLink::Road { road, .. } => Some(road),
+            _ => None,
+        };
+        for lm in &lane_moves.movements {
+            assert_eq!(lm.status, MovementStatus::Candidate);
+            assert_eq!(Some(lm.from.road), road_at(lm.internal.from_arm));
+            assert_eq!(Some(lm.to.road), road_at(lm.internal.to_arm));
+            assert!(movements.contains(&lm.internal));
+        }
+        add(
+            "lane movements road to road (candidate)".to_owned(),
+            lane_moves.movements.len(),
+        );
+        for (_, issue) in &lane_moves.unpaired_arms {
+            add(format!("unpaired arm sides: {}", issue_key(*issue)), 1);
+        }
+    }
+
+    let (models, rules) = defs.counts();
+    eprintln!(
+        "definitions: {models} prefab models, {rules} traffic rules, {} prefab definitions used",
+        prefabs.definition_count()
+    );
+    for (key, value) in &stats {
+        eprintln!("{value:>8}  {key}");
+    }
+    assert!(
+        !stats
+            .keys()
+            .any(|k| k.contains("descriptor invalid") || k.contains("model missing")),
+        "every prefab model and descriptor resolves"
     );
 }

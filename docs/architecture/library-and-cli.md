@@ -2,7 +2,7 @@
 
 RoadPilot-Map consists of a reusable library and a standalone CLI ([ADR 0001](../adr/0001-rust-library-and-cli-with-local-offline-generation.md)). This document defines what each is responsible for.
 
-> **Status: partially implemented.** The library contains the archive reader, the sector parser and the road and node model, but not yet the end-to-end API sketched below. The CLI implements `--version` and `doctor`; all other commands are planned. Proposals in this document may change during implementation.
+> **Status: partially implemented.** The library contains the archive reader, the sector and prefab descriptor parsers, and the road, lane and prefab model, but not yet the end-to-end API sketched below. The CLI implements `--version` and `doctor`; all other commands are planned. Proposals in this document may change during implementation.
 
 ## Library
 
@@ -22,10 +22,10 @@ The library (the `roadpilot-map` facade and the crates below it) contains **all 
 |---|---|
 | Discover a game installation | Planned |
 | Read SCS archives | Implemented for HashFS v2 (`roadpilot-map-archive`) |
-| Parse the relevant game files | Partially implemented: sector `.base` and `.data` files, and the road look, lane type and country definitions (`roadpilot-map-formats`) |
-| Build the internal map model | Partially implemented: roads, nodes and lanes (`roadpilot-map-model`, `roadpilot_map::build_road_network`, `roadpilot_map::build_lane_network`) |
+| Parse the relevant game files | Partially implemented: sector `.base` and `.data` files, prefab descriptors (`.ppd`), and the road look, lane type, country, prefab model and traffic rule definitions (`roadpilot-map-formats`) |
+| Build the internal map model | Partially implemented: roads, nodes, lanes and prefabs (`roadpilot-map-model`, `roadpilot_map::build_road_network`, `roadpilot_map::build_lane_network`, `roadpilot_map::build_prefab_network`) |
 | Road and lane geometry, widths, offsets, curvature and curve radius | Planned (the curve between road nodes is under investigation) |
-| Road network, intersections, lane connectivity | Partially implemented: road-to-road connections and candidate lane transitions; no intersections |
+| Road network, intersections, lane connectivity | Partially implemented: road-to-road connections, candidate lane transitions, junctions as prefab instances with confirmed internal movements and candidate lane movements; no routing |
 | Write and read map packages | Planned |
 | Progress reporting | Planned |
 
@@ -55,11 +55,11 @@ None of the four functions above exists yet. What exists today is the stage API:
 | Crate | Public API today |
 |---|---|
 | `roadpilot-map-archive` | `Archive::open`, `Archive::open_with_limits`, `Archive::entries`, `Archive::find`, `Archive::read`, `Archive::read_file`, `Archive::list_dir`, `path_hash` |
-| `roadpilot-map-formats` | `parse_base`, `parse_data` (and `*_with_limits` variants) with the record types `BaseSector`, `Item`, `ItemData`, `Road`, `Prefab`, `Node`, `DataSector`; `sii::parse_sii` and the `definitions` records |
-| `roadpilot-map-model` | `RoadNetwork` with `roads_at`, `successor`, `predecessor`, `connections`, `geometry`; `Road`, `Node`, `NodeLink`, `RoadGeometry`; `LaneNetwork` with `road`, `transition`; `RoadLanes`, `Lane` |
-| `roadpilot-map` (facade) | `build_road_network`, `LaneDefinitions`, `build_lane_network`, `version`, the `dev` diagnostics module, and re-exports of the parser (`formats`) and the model (`model`) |
+| `roadpilot-map-formats` | `parse_base`, `parse_data` (and `*_with_limits` variants) with the record types `BaseSector`, `Item`, `ItemData`, `Road`, `Prefab`, `Node`, `DataSector`; `sii::parse_sii` and the `definitions` records; `ppd::parse_ppd` with `PrefabDescriptor` |
+| `roadpilot-map-model` | `RoadNetwork` with `roads_at`, `successor`, `predecessor`, `connections`, `geometry`; `Road`, `Node`, `NodeLink`, `RoadGeometry`; `LaneNetwork` with `road`, `transition`; `RoadLanes`, `Lane`; `PrefabNetwork` with `instance`, `definition`, `arms`, `movements`, `lane_movements`; `PrefabInstance`, `PrefabDefinition`, `PrefabMovement`, `LaneMovement` |
+| `roadpilot-map` (facade) | `build_road_network`, `LaneDefinitions`, `build_lane_network`, `PrefabDefinitions`, `build_prefab_network`, `version`, the `dev` diagnostics module, and re-exports of the parser (`formats`) and the model (`model`) |
 
-The facade does not depend on the archive reader yet; callers combine it with the facade themselves.
+The facade does not depend on the archive reader yet; callers combine it with the facade themselves (for `.ppd` descriptors, `build_prefab_network` takes a function that loads a file by archive path).
 
 ## CLI
 

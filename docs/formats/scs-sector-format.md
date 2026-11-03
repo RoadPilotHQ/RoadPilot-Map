@@ -107,6 +107,7 @@ Nested structures:
 | Prefab | Model (token) | 0 | Cross-checked: 100 % name a `prefab_model` unit (`prefab.<name>`) |
 | Prefab | Node UIDs | after the parts list | Cross-checked: 100 % are nodes |
 | Prefab | Connected item UIDs | after the nodes | Cross-checked: all are items (signs, models, companies, services, garages, fuel pumps, bus stops) |
+| Prefab | Origin (`u8`) | 8 bytes after the connected items | Measured in Step 5: instance node `i` is descriptor node `(i + origin) % n` for 98.8 % of instances ([SCS prefabs and junctions](scs-prefab-junctions.md#node-mapping)) |
 
 All other payload bytes are exposed as raw `Item::payload`; ts-map gives meanings for some of them that are not checked yet.
 

@@ -131,6 +131,10 @@ pub struct Prefab {
     /// UIDs of items attached to the prefab (signs, models, companies,
     /// services and similar).
     pub connected_items: Vec<u64>,
+    /// The byte after the connected items and 8 further bytes. Instance node
+    /// `i` corresponds to descriptor node `(i + origin) % node count`
+    /// (98.8 % geometric agreement, see `docs/formats/scs-prefab-junctions.md`).
+    pub origin: u8,
 }
 
 /// Type-specific content that the parser exposes.
@@ -170,10 +174,13 @@ fn prefab(payload: &[u8]) -> Result<Prefab> {
     c.skip_array(8, "prefab additional parts")?;
     let nodes = c.uid_list("prefab node")?;
     let connected_items = c.uid_list("prefab connected item")?;
+    c.skip(8, "prefab payload")?;
+    let origin = c.u8("prefab origin")?;
     Ok(Prefab {
         model,
         nodes,
         connected_items,
+        origin,
     })
 }
 

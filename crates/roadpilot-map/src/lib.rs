@@ -8,7 +8,10 @@
 //! ([`build_road_network`]): road segments, nodes and the connections that
 //! follow from their references; and the lanes of each road from the road
 //! look, lane type and country definitions ([`build_lane_network`]).
-//! Junctions, lane geometry and the map package are added in later steps,
+//! Prefabs (junctions and other road pieces) with their stored internal lane
+//! movements come from the prefab models and their `.ppd` descriptors
+//! ([`build_prefab_network`]). Lane geometry and the map package are added
+//! in later steps,
 //! as described in `docs/architecture/`.
 //!
 //! The parser and model crates are re-exported as [`formats`] and [`model`].
@@ -21,9 +24,11 @@
 
 pub mod dev;
 mod lanes;
+mod prefabs;
 mod roads;
 
 pub use lanes::{DefinitionsError, LaneBuildError, LaneDefinitions, build_lane_network};
+pub use prefabs::{PrefabDefinitions, build_prefab_network};
 pub use roadpilot_map_formats as formats;
 pub use roadpilot_map_model as model;
 pub use roads::build_road_network;
