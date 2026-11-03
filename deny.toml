@@ -1,0 +1,82 @@
+# cargo-deny configuration for RoadPilot-Map.
+#
+# Pinned tool version: cargo-deny 0.20.2 (needs Rust 1.88 or newer to build;
+# the pinned development toolchain is 1.97.1). Install it with:
+#
+#     cargo install cargo-deny --version 0.20.2 --locked
+#
+# Required check (all four sections): cargo deny check
+# Reference: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+# Check the dependency graph for every target and with default features only.
+all-features = false
+no-default-features = false
+
+[output]
+feature-depth = 1
+
+# ---------------------------------------------------------------- advisories
+# Known security advisories from the RustSec advisory database.
+# Vulnerabilities, unmaintained and unsound crates are errors. Yanked crate
+# versions are errors too.
+[advisories]
+yanked = "deny"
+# Every exception needs an advisory ID and a written reason, for example:
+#   { id = "RUSTSEC-0000-0000", reason = "Why it does not affect us, and when it will be removed." }
+# Ignored advisories are still reported as notes.
+ignore = []
+
+# ---------------------------------------------------------------- licenses
+# Initial, conservative dependency license policy.
+#
+# This is NOT the project's own license. RoadPilot-Map has no license yet
+# (docs/open-questions.md, L4 and L5). The list below contains only common
+# permissive licenses, so that it does not restrict that later decision.
+#
+# Review this list before adding the first dependency, and again once the
+# project license is chosen. Copyleft licenses are not allowed for now.
+[licenses]
+allow = [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+]
+# Licenses on this list are allowed even if no dependency uses them yet.
+unused-allowed-license = "allow"
+confidence-threshold = 0.93
+# Per-crate exceptions need a reason in a comment next to the entry.
+exceptions = []
+
+# Workspace crates have `publish = false` and no license field, because the
+# project license is undecided. They are skipped here. If a crate is ever
+# published, it needs a license field and is then checked like a dependency.
+[licenses.private]
+ignore = true
+registries = []
+
+# ---------------------------------------------------------------- bans
+[bans]
+# Several versions of one crate are allowed for now, but reported.
+multiple-versions = "warn"
+# Dependencies without a version requirement ("*") are not allowed.
+wildcards = "deny"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+# No crates are banned yet. Every future ban needs a documented reason.
+allow = []
+deny = []
+skip = []
+skip-tree = []
+
+# ---------------------------------------------------------------- sources
+# Only crates.io is allowed. Other registries and git dependencies are
+# rejected and need explicit approval before they are added here.
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

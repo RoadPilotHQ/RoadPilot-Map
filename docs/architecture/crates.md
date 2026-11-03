@@ -76,5 +76,10 @@ These conventions are in effect since Phase 0 (steps 3 and 4). The error-handlin
 - **Errors:** library crates define typed errors with `thiserror`. Only the CLI uses `anyhow`.
 - **Panics:** library code must not panic on malformed input. `unwrap` is rejected by Clippy. `expect` is allowed only where an invariant is proven, and the reason is stated in the message.
 - **Unsafe code:** forbidden for all crates by the workspace lint `unsafe_code = "forbid"`. Any exception needs an ADR.
-- **Dependencies:** kept minimal. Their licenses are checked with `cargo-deny` so the later license choice stays open.
-- **Publishing:** crates are not published to crates.io until the license is decided.
+- **Dependencies:** kept minimal. `cargo deny check` must pass. It is configured in `deny.toml` and checks:
+  - **advisories:** known vulnerabilities, unmaintained and unsound crates, and yanked versions are errors. An exception needs the advisory ID and a written reason.
+  - **licenses:** only common permissive licenses (Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MIT) are allowed for dependencies. This is not the project's own license, which is still undecided. Review the list before adding the first dependency and again once the project license is chosen.
+  - **bans:** wildcard version requirements are errors; duplicate crate versions are warnings. No crates are banned yet, and every future ban needs a documented reason.
+  - **sources:** only crates.io. Other registries and git dependencies are rejected until explicitly approved.
+- **Tool version:** cargo-deny is pinned to 0.20.2 (see the header of `deny.toml`). Install it with `cargo install cargo-deny --version 0.20.2 --locked`.
+- **Publishing:** crates are not published to crates.io until the license is decided. Unpublished workspace crates are skipped by the license check; a published crate needs a license field.
