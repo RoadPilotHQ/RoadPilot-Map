@@ -2,7 +2,7 @@
 
 RoadPilot-Map is the map processing and geographic data infrastructure of the RoadPilot ecosystem. It reads the map data of Euro Truck Simulator 2 (ETS2) and American Truck Simulator (ATS) from the user's own local installation and turns it into structured road data for RoadPilot.
 
-> **Status: early development (Phase 1).** The archive reader, the sector file parser, a road and node model, a lane model (lanes per road, traffic side, driving directions) a prefab and junction model (prefab descriptors, road-to-prefab connections, lane movements through junctions) and a first navigation graph with route search are implemented and tested. Lane geometry, curvature, travel time and distance, live routing and map package generation are **not implemented yet**. There are no releases.
+> **Status: early development (Phase 1).** The archive reader, the sector file parser, a road and node model, a lane model (lanes per road, traffic side, driving directions) a prefab and junction model (prefab descriptors, road-to-prefab connections, lane movements through junctions) a first navigation graph with route search and a versioned export of the navigation graph are implemented and tested. Lane geometry, curvature, travel time and distance, live routing and map package generation are **not implemented yet**. There are no releases.
 
 Architecture documentation, format specifications, decision records and open questions are in [`docs/`](docs/README.md). An overview for new readers is in the [project wiki](https://github.com/RoadPilotHQ/RoadPilot-Map/wiki).
 
@@ -20,6 +20,7 @@ RoadPilot-Map turns ETS2 and ATS map data into structured, versioned road inform
 | Lane model | `roadpilot-map-formats`, `roadpilot-map-model`, `roadpilot-map` | Lanes per road from the road look definitions (read with a minimal text SII reader), the traffic side per road from the country of its nodes, driving directions, stored lane offsets and candidate lane transitions between connected roads. Lane widths and the exact lane order are not stored in the data and stay unknown. See [`docs/formats/scs-lane-model.md`](docs/formats/scs-lane-model.md). |
 | Prefab and junction model | `roadpilot-map-formats`, `roadpilot-map-model`, `roadpilot-map` | Prefab descriptors (`.ppd`), prefab definitions and instances, the road or prefab attached to each prefab node, the stored internal lane movements with their traffic rule references, static traffic light positions, and candidate road-lane movements through a junction. Traffic rule semantics and signal states are not modelled. See [`docs/formats/scs-prefab-junctions.md`](docs/formats/scs-prefab-junctions.md). |
 | Navigation graph | `roadpilot-map-model` | A directed graph of lanes and prefab slots. Every connection has a status (confirmed, candidate, unknown, forbidden) and an origin. Route search in two modes: `ConfirmedOnly` and `AllowCandidates`, with an algorithmic cost (not a distance). See [`docs/navigation/navigation-graph.md`](docs/navigation/navigation-graph.md). |
+| Navigation graph export | `roadpilot-map`, `roadpilot-map-cli` | Loads the navigation model from a local installation (read-only) and writes it as a versioned JSON Lines file for external consumers, with node and edge statuses, origins and known limitations. `roadpilot-map export-navigation` writes it, `roadpilot-map check-navigation-export` validates it. See [`docs/navigation/navigation-export.md`](docs/navigation/navigation-export.md). |
 | Development diagnostics | `roadpilot-map-cli` | `roadpilot-map doctor` checks a checkout: toolchain version, workspace, configuration files, cargo-deny and documentation. `roadpilot-map --version` prints the version. |
 
 The implementation is verified with tests on synthetic data built in code, plus opt-in tests that read a local game installation without modifying it.
@@ -55,7 +56,7 @@ Tests need no game installation. The test policy, including the opt-in tests aga
 | `roadpilot-map-formats` | Parse game files | Partially implemented (sector files, lane and prefab definitions, prefab descriptors) |
 | `roadpilot-map-model` | Internal map model | Partially implemented (roads, nodes, lanes and prefabs) |
 | `roadpilot-map` | Facade library | Partially implemented |
-| `roadpilot-map-cli` | Command-line interface (`roadpilot-map`) | `--version` and `doctor` |
+| `roadpilot-map-cli` | Command-line interface (`roadpilot-map`) | `--version`, `doctor`, `export-navigation`, `check-navigation-export` |
 | `roadpilot-map-geometry`, `roadpilot-map-network`, `roadpilot-map-package` | Geometry, network, map package | Planned |
 
 Details are in [`docs/architecture/`](docs/architecture/overview.md).
@@ -85,6 +86,7 @@ RoadPilot-Map will provide map data to the RoadPilot application through a versi
 | Lane model | Implemented: lanes, traffic side, directions, candidate transitions |
 | Junctions | Implemented: prefabs, road-to-prefab connections, internal movements, candidate lane movements |
 | Navigation | Implemented: graph and first route search; confirmed-only routes are limited to prefab interiors by the data |
+| Navigation export | Implemented: versioned JSON Lines format, writer, reference reader, CLI |
 | Lane geometry, map package | Not started |
 | Architecture | Documented in [`docs/`](docs/README.md), ADR 0001 accepted |
 | Releases | None |

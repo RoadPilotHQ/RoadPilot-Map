@@ -23,10 +23,13 @@
 //! RoadPilot-Map itself. It is not part of map processing.
 
 pub mod dev;
+pub mod export;
+mod installation;
 mod lanes;
 mod prefabs;
 mod roads;
 
+pub use installation::{Game, InstallationError, InstallationModel, load_installation};
 pub use lanes::{DefinitionsError, LaneBuildError, LaneDefinitions, build_lane_network};
 pub use prefabs::{PrefabDefinitions, build_prefab_network};
 pub use roadpilot_map_formats as formats;

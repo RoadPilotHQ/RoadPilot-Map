@@ -685,3 +685,211 @@ fn builds_the_navigation_graph_of_the_installation() {
     eprintln!("{routes} routes in {:?}", t.elapsed());
     assert!(routes >= 4, "starts from several map regions");
 }
+
+/// Hashes and counts everything written to it (FNV-1a, 64 bit).
+struct HashingWriter {
+    hash: u64,
+    len: u64,
+}
+
+impl std::io::Write for HashingWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        for &b in buf {
+            self.hash = (self.hash ^ u64::from(b)).wrapping_mul(0x0000_0100_0000_01b3);
+        }
+        self.len += buf.len() as u64;
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+fn weak_components(n: usize, edges: &[(u32, u32)]) -> Vec<usize> {
+    fn find(p: &mut [u32], mut x: u32) -> u32 {
+        while p[x as usize] != x {
+            p[x as usize] = p[p[x as usize] as usize];
+            x = p[x as usize];
+        }
+        x
+    }
+    let mut parent: Vec<u32> = (0..n as u32).collect();
+    for &(a, b) in edges {
+        let (ra, rb) = (find(&mut parent, a), find(&mut parent, b));
+        if ra != rb {
+            parent[ra as usize] = rb;
+        }
+    }
+    let mut size = vec![0usize; n];
+    for i in 0..n as u32 {
+        size[find(&mut parent, i) as usize] += 1;
+    }
+    let mut sizes: Vec<usize> = size.into_iter().filter(|&s| s > 0).collect();
+    sizes.sort_unstable();
+    sizes
+}
+
+#[test]
+#[ignore = "reads a local game installation; set ROADPILOT_MAP_GAME_DIR and run with --ignored"]
+fn exports_the_navigation_graph_of_the_installation() {
+    use roadpilot_map::export::{
+        ExportInput, ExportMetadata, ExportRecord, read_navigation_export, write_navigation_export,
+        write_navigation_export_file,
+    };
+    use roadpilot_map::model::{ConnectionStatus, NavNode, NavigationGraph};
+    use roadpilot_map::{Game, InstallationError, load_installation};
+    use std::time::Instant;
+
+    let dir = game_dir();
+    let started = Instant::now();
+    let model = match load_installation(&dir, Game::Ets2) {
+        Ok(m) => m,
+        Err(InstallationError::NotRecognized(_)) => {
+            load_installation(&dir, Game::Ats).expect("the installation loads")
+        }
+        Err(e) => panic!("the installation does not load: {e}"),
+    };
+    eprintln!(
+        "{}: loaded in {:?}, {} archives read, {} skipped",
+        model.game.id(),
+        started.elapsed(),
+        model.archives.len(),
+        model.skipped_archives
+    );
+
+    // The library loader builds the same graph as the step-by-step pipeline.
+    let files = sector_files(&dir);
+    let sectors: Vec<_> = files
+        .iter()
+        .map(|f| parse_base(f).expect("sector parses"))
+        .collect();
+    let network = build_road_network(&sectors).expect("road network builds");
+    let lane_defs =
+        LaneDefinitions::from_units(&lane_definition_units(&dir)).expect("lane definitions");
+    let lanes = build_lane_network(&network, &sectors, &lane_defs).expect("lane network builds");
+    let units = definition_units(&dir, &["prefab", "traffic_rules"], false);
+    let defs = PrefabDefinitions::from_units(&units).expect("prefab definitions");
+    let archives = open_archives(&dir);
+    let load = |path: &str| archives.iter().rev().find_map(|a| a.read_file(path).ok());
+    let prefabs = build_prefab_network(&network, &sectors, &defs, load).expect("prefabs build");
+    let graph = NavigationGraph::build(&network, &lanes, &prefabs).expect("graph builds");
+    assert_eq!(model.graph, graph, "the loader builds the same graph");
+
+    let meta = ExportMetadata::for_installation(&model);
+    let input = ExportInput::from_installation(&model);
+
+    // Deterministic: two exports have the same hash and size.
+    let mut hashes = Vec::new();
+    for _ in 0..2 {
+        let started = Instant::now();
+        let mut w = HashingWriter {
+            hash: 0xcbf2_9ce4_8422_2325,
+            len: 0,
+        };
+        let stats = write_navigation_export(&mut w, &input, &meta).expect("export is written");
+        assert_eq!(stats.bytes, w.len);
+        eprintln!("export of {} bytes in {:?}", w.len, started.elapsed());
+        hashes.push((w.hash, w.len));
+    }
+    assert_eq!(hashes[0], hashes[1], "repeated exports are identical");
+
+    // Write a file, then read it back and compare it with the graph.
+    let out = std::env::temp_dir().join(format!(
+        "roadpilot-map-real-export-{}.jsonl",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&out);
+    let stats = write_navigation_export_file(&out, false, Some(&dir), &input, &meta)
+        .expect("the file is written");
+    assert_eq!(stats.bytes, hashes[0].1);
+
+    let mut nodes = model.graph.nodes();
+    let mut edges = model.graph.edges();
+    let mut edge_pairs: Vec<(u32, u32)> = Vec::new();
+    let mut status_counts = [0usize; 4];
+    let mut node_count = 0usize;
+    let mut moved = 0usize;
+    let file = std::io::BufReader::new(std::fs::File::open(&out).expect("open"));
+    let summary = read_navigation_export(file, &mut |r| match r {
+        ExportRecord::Node(n) => {
+            let src = nodes.next().expect("one node per record");
+            let kind = match src {
+                NavNode::LaneEntry(_) => "lane_entry",
+                NavNode::LaneExit(_) => "lane_exit",
+                NavNode::PrefabInput(_) => "prefab_input",
+                NavNode::PrefabOutput(_) => "prefab_output",
+            };
+            assert_eq!(n.kind, kind);
+            assert_eq!(n.id as usize, node_count);
+            let map_node = model
+                .network
+                .node(roadpilot_map::model::NodeId(n.map_node))
+                .expect("the map node exists");
+            assert_eq!(n.position, Some(map_node.position.fixed.map(i64::from)));
+            node_count += 1;
+        }
+        ExportRecord::Edge(e) => {
+            let src = edges.next().expect("one edge per record");
+            assert_eq!(
+                (e.from as usize, e.to as usize),
+                (src.from().index(), src.to().index())
+            );
+            assert_eq!(e.source, src.origin().source);
+            let s = match src.status() {
+                ConnectionStatus::Confirmed => 0,
+                ConnectionStatus::Candidate => 1,
+                ConnectionStatus::Unknown => 2,
+                ConnectionStatus::Forbidden => 3,
+            };
+            status_counts[s] += 1;
+            assert_eq!(
+                e.status,
+                ["confirmed", "candidate", "unknown", "forbidden"][s]
+            );
+            edge_pairs.push((e.from, e.to));
+            moved += usize::from(!e.rules.is_empty());
+        }
+        _ => {}
+    })
+    .expect("the written file is a valid export");
+    let _ = std::fs::remove_file(&out);
+
+    // Counts and statuses are preserved.
+    assert!(
+        nodes.next().is_none() && edges.next().is_none(),
+        "nothing is lost"
+    );
+    assert_eq!(summary.header.nodes, model.graph.node_count());
+    assert_eq!(summary.header.edges, model.graph.edge_count());
+    assert_eq!(summary.header.issues, model.graph.issues().len());
+    assert_eq!(status_counts, model.graph.status_counts());
+    assert_eq!(status_counts[3], 0, "no forbidden edge is produced");
+    assert!(status_counts[0] > 0 && status_counts[1] > 0 && status_counts[2] > 0);
+    assert_eq!(summary.header.game, model.game.id());
+    assert_eq!(summary.ignored_records, 0);
+
+    // Disconnected regions are preserved: the components computed from the
+    // file equal those of the graph.
+    let from_graph: Vec<(u32, u32)> = model
+        .graph
+        .edges()
+        .map(|e| (e.from().index() as u32, e.to().index() as u32))
+        .collect();
+    let a = weak_components(summary.header.nodes, &edge_pairs);
+    let b = weak_components(model.graph.node_count(), &from_graph);
+    assert_eq!(a, b);
+    assert!(
+        a.len() > 1,
+        "the exported network is not one connected piece"
+    );
+    eprintln!(
+        "{} nodes, {} edges {:?} (confirmed, candidate, unknown, forbidden), {} issues, {} components, {moved} edges with rules, {} bytes",
+        summary.header.nodes,
+        summary.header.edges,
+        status_counts,
+        summary.header.issues,
+        a.len(),
+        hashes[0].1
+    );
+}

@@ -85,7 +85,7 @@ Each stage has a typed input and a typed output. Stages do not share hidden stat
 - **Output:** a map package on disk.
 - **Crate:** `roadpilot-map-package`.
 - **Notes:** the package format and encoding will be decided in their own ADR.
-- **Status:** planned; the crate does not exist and no package is written.
+- **Status:** planned; the crate does not exist and no package is written. The navigation graph can already be written as a separate, versioned exchange file ([Navigation graph export](../navigation/navigation-export.md)); it is not the map package.
 
 ## Map package (proposal)
 

@@ -4,6 +4,8 @@ Status: **implemented** (Phase 1, Step 6) in `crates/roadpilot-map-model` (`navi
 
 The graph restates what the earlier models know and **never upgrades a connection**. The route search is conservative: it uses unconfirmed connections only when the caller allows it, and then marks them.
 
+The graph is exported for other programs in the format described in [Navigation graph export](navigation-export.md) (Step 7).
+
 Not part of this step: live or dynamic routing, travel time or ETA, physical distances, speed, signal states, lane changes, vehicle control, and a map package export.
 
 Evidence levels follow the other format documents: **Confirmed**, **Measured**, **Inferred**, **Unknown**.

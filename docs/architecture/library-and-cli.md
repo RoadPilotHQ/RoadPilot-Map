@@ -20,7 +20,7 @@ The library (the `roadpilot-map` facade and the crates below it) contains **all 
 
 | Responsibility | Status |
 |---|---|
-| Discover a game installation | Planned |
+| Discover a game installation | Planned (an explicit folder is accepted: `load_installation`) |
 | Read SCS archives | Implemented for HashFS v2 (`roadpilot-map-archive`) |
 | Parse the relevant game files | Partially implemented: sector `.base` and `.data` files, prefab descriptors (`.ppd`), and the road look, lane type, country, prefab model and traffic rule definitions (`roadpilot-map-formats`) |
 | Build the internal map model | Partially implemented: roads, nodes, lanes and prefabs (`roadpilot-map-model`, `roadpilot_map::build_road_network`, `roadpilot_map::build_lane_network`, `roadpilot_map::build_prefab_network`) |
@@ -57,9 +57,9 @@ None of the four functions above exists yet. What exists today is the stage API:
 | `roadpilot-map-archive` | `Archive::open`, `Archive::open_with_limits`, `Archive::entries`, `Archive::find`, `Archive::read`, `Archive::read_file`, `Archive::list_dir`, `path_hash` |
 | `roadpilot-map-formats` | `parse_base`, `parse_data` (and `*_with_limits` variants) with the record types `BaseSector`, `Item`, `ItemData`, `Road`, `Prefab`, `Node`, `DataSector`; `sii::parse_sii` and the `definitions` records; `ppd::parse_ppd` with `PrefabDescriptor` |
 | `roadpilot-map-model` | `RoadNetwork` with `roads_at`, `successor`, `predecessor`, `connections`, `geometry`; `Road`, `Node`, `NodeLink`, `RoadGeometry`; `LaneNetwork` with `road`, `transition`; `RoadLanes`, `Lane`; `PrefabNetwork` with `instance`, `definition`, `arms`, `movements`, `lane_movements`; `PrefabInstance`, `PrefabDefinition`, `PrefabMovement`, `LaneMovement`; `NavigationGraph` with `build`, `route`, `reachable_from`; `NavigationGraphBuilder`, `Route`, `RoutingMode`, `ConnectionStatus` |
-| `roadpilot-map` (facade) | `build_road_network`, `LaneDefinitions`, `build_lane_network`, `PrefabDefinitions`, `build_prefab_network`, `version`, the `dev` diagnostics module, and re-exports of the parser (`formats`) and the model (`model`) |
+| `roadpilot-map` (facade) | `build_road_network`, `LaneDefinitions`, `build_lane_network`, `PrefabDefinitions`, `build_prefab_network`, `load_installation`, `Game`, `export` (`write_navigation_export`, `write_navigation_export_file`, `check_navigation_export`, `read_navigation_export`), `version`, the `dev` diagnostics module, and re-exports of the parser (`formats`) and the model (`model`) |
 
-The facade does not depend on the archive reader yet; callers combine it with the facade themselves (for `.ppd` descriptors, `build_prefab_network` takes a function that loads a file by archive path).
+The facade depends on the archive reader since Step 7 and reads the archives of an installation in `load_installation`. The single-step functions (`build_prefab_network` takes a function that loads a file by archive path) remain available for tests and tools.
 
 ## CLI
 
@@ -68,7 +68,7 @@ The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-faci
 ### Responsibilities
 
 - Parse command-line arguments.
-- Locate the game installation, or accept it via `--game-dir` (planned; no command reads a game installation yet).
+- Locate the game installation, or accept it via `--game-dir` (`export-navigation` takes it explicitly; there is no discovery yet).
 - Show progress and readable errors.
 - Return meaningful exit codes.
 - Contain no map processing logic of its own.
@@ -79,6 +79,8 @@ The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-faci
 |---|---|---|
 | `roadpilot-map --version` (or `-V`) | Print the tool version. | 0 (done) |
 | `roadpilot-map doctor [--project-dir <path>]` | Development diagnostics for a RoadPilot-Map checkout (see [doctor](#doctor)). | 0 (done) |
+| `roadpilot-map export-navigation --game <ets2\|ats> --game-dir <path> --out <file> [--force]` | Load the navigation model of an installation and write the navigation graph export ([format](../navigation/navigation-export.md)). | 1 (done) |
+| `roadpilot-map check-navigation-export <file>` | Check an export file against the specification and print a summary. | 1 (done) |
 | Game installation check (`--game-dir <path>`, command name to be decided) | Check that a folder looks like an ATS or ETS2 install and list its archives. No parsing. Originally planned as Phase 0, Step 8. | 1 (not implemented yet) |
 | `roadpilot-map build --game-dir <path> --out <path>` | Generate a map package. | Later |
 | `roadpilot-map inspect <package>` | Show a package's manifest and summary statistics. | Later |
@@ -96,7 +98,7 @@ Any other arguments, including `--help` (not implemented), print the usage text 
 | 3 | Game installation not found or not recognized |
 | 4 | Processing failed (unsupported or malformed game data) |
 
-Implemented today: 0, 1 (`doctor` only) and 2. Codes 3 and 4 belong to the planned commands. `doctor` uses code 1 when a required check fails (see below).
+Implemented today: 0, 1, 2, 3 and 4. `doctor` uses code 1 when a required check fails (see below). `export-navigation` uses 1 for problems with the output (file exists, folder missing, inside the game folder, write error), 3 if the folder is not an installation of the game, and 4 if game data or the models are invalid. `check-navigation-export` uses 4 for an invalid or unsupported file and 1 if the file cannot be read.
 
 ### doctor
 

@@ -2,7 +2,7 @@
 
 This folder contains the architecture documentation, decision records and plans for RoadPilot-Map.
 
-> **Status: Phase 1.** The workspace, the development diagnostics, the HashFS v2 archive reader, the sector file parser, the road and node model, the lane model, the prefab and junction model and a first navigation graph with route search are implemented. Everything else described here is the planned design unless a document says otherwise.
+> **Status: Phase 1.** The workspace, the development diagnostics, the HashFS v2 archive reader, the sector file parser, the road and node model, the lane model, the prefab and junction model, a first navigation graph with route search and an export of the navigation graph are implemented. Everything else described here is the planned design unless a document says otherwise.
 
 ## Contents
 
@@ -28,6 +28,7 @@ This folder contains the architecture documentation, decision records and plans 
 ### Navigation
 
 - [Navigation graph and route planning](navigation/navigation-graph.md) - the directed graph of lanes and prefab slots, connection status and origin, the two routing modes, the algorithmic cost model and measurements.
+- [Navigation graph export](navigation/navigation-export.md) - the versioned file format (JSON Lines, schema 1) for external consumers: specification, identifiers, status semantics, compatibility rules, limitations and measurements.
 - [Navigation graph connectivity audit](navigation/connectivity-audit.md) - why the graph has small connected pieces, classification of the causes, and the evidence for the lane direction rule (Step 6.1).
 
 ### Research
