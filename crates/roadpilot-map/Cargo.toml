@@ -10,5 +10,13 @@ publish.workspace = true
 [lib]
 name = "roadpilot_map"
 
+[dependencies]
+roadpilot-map-formats.workspace = true
+roadpilot-map-model.workspace = true
+
+[dev-dependencies]
+# Only for the opt-in test against a local game installation.
+roadpilot-map-archive.workspace = true
+
 [lints]
 workspace = true

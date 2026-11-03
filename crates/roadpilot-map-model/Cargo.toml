@@ -1,0 +1,17 @@
+[package]
+name = "roadpilot-map-model"
+description = "Internal map model of RoadPilot-Map: plain data types without I/O."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "roadpilot_map_model"
+
+# No dependencies: the model is plain data and has no workspace dependencies
+# (see docs/architecture/crates.md).
+
+[lints]
+workspace = true

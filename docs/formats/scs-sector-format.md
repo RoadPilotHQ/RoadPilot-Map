@@ -103,6 +103,7 @@ Nested structures:
 | Road | Road look (token) | 4 | Cross-checked: 100 % name a `road_look` unit (`road.<name>`) in the game definitions |
 | Road | Start node UID | 192 | Cross-checked: 100 % of these nodes have the road as `forward_item` |
 | Road | End node UID | 200 | Cross-checked: 100 % have the road as `backward_item` |
+| Road | Length (`f32`) | 208 | Cross-checked: equals the node distance for straight roads and the curve length for curved roads (see [SCS road geometry](scs-road-geometry.md)) |
 | Prefab | Model (token) | 0 | Cross-checked: 100 % name a `prefab_model` unit (`prefab.<name>`) |
 | Prefab | Node UIDs | after the parts list | Cross-checked: 100 % are nodes |
 | Prefab | Connected item UIDs | after the nodes | Cross-checked: all are items (signs, models, companies, services, garages, fuel pumps, bus stops) |
@@ -173,7 +174,7 @@ Tests:
 | ID | Question |
 |---|---|
 | S1 | Meaning of header words 4–12, the 5 item flag bytes, node flags and bounds axes 3–4. |
-| S2 | Meaning of the undecoded payload fields of all item types (ts-map gives hypotheses for several). In particular, the 212-byte road payload holds more than the look and the nodes. |
+| S2 | Meaning of the undecoded payload fields of all item types (ts-map gives hypotheses for several). In particular, the 212-byte road payload holds more than the look, the nodes and the length. |
 | S3 | Layout of `.data` entries. They are needed if lane-relevant road or prefab data is stored there (not known yet). |
 | S4 | Component order of the node rotation quaternion and the coordinate units (T3). |
 | S5 | Item types that do not occur in `.base` today (for example type 13 or 40) and how `.aux` and `.snd` are structured. |

@@ -2,7 +2,7 @@
 
 RoadPilot-Map is a single Cargo workspace with several small crates. This document describes the planned layout and the dependency rules.
 
-> **Partly implemented.** `roadpilot-map` and `roadpilot-map-cli` exist since Phase 0, `roadpilot-map-archive` and `roadpilot-map-formats` since Phase 1. The other crates are added when their phase starts.
+> **Partly implemented.** `roadpilot-map` and `roadpilot-map-cli` exist since Phase 0, `roadpilot-map-archive`, `roadpilot-map-formats` and `roadpilot-map-model` since Phase 1. The other crates are added when their phase starts.
 
 ## Workspace layout
 
@@ -29,7 +29,7 @@ RoadPilot-Map/
 |---|---|---|
 | `roadpilot-map-archive` | lib | Open HashFS v2 archives (`.scs`) read-only, find entries by path, list directories and read single entries (stored or zlib). No knowledge of map semantics. See [HashFS v2 archive reader](../formats/hashfs-v2.md). |
 | `roadpilot-map-formats` | lib | Parse game definition files and map sector files into raw, format-close records. No geometry computation. Today: sector `.base` and `.data` files, see [SCS sector format](../formats/scs-sector-format.md). |
-| `roadpilot-map-model` | lib | Internal map model: nodes, road segments, prefabs, lanes, sectors, identifiers, and the result types of the geometry and network stages. Plain data types, no I/O. |
+| `roadpilot-map-model` | lib | Internal map model: nodes, road segments, prefabs, lanes, sectors, identifiers, and the result types of the geometry and network stages. Plain data types, no I/O. Today: roads, nodes and their connections, see [SCS road geometry](../formats/scs-road-geometry.md). |
 | `roadpilot-map-geometry` | lib | Road and lane curves, lane widths and offsets, sampling, curvature and curve radius. |
 | `roadpilot-map-network` | lib | Road graph, intersections, lane-level connectivity, and later a spatial index for map matching. |
 | `roadpilot-map-package` | lib | Map package manifest and data format, versioning, writer and reader. |

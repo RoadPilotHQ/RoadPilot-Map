@@ -4,8 +4,12 @@
 //! data of a locally installed American Truck Simulator or Euro Truck Simulator 2
 //! game into versioned, lane-level map packages.
 //!
-//! At this stage it only exposes version information. Map processing is added
-//! in later phases, as described in `docs/architecture/`.
+//! So far it builds the road model from parsed sector files
+//! ([`build_road_network`]): road segments, nodes and the connections that
+//! follow from their references. Lanes, junctions and the map package are
+//! added in later steps, as described in `docs/architecture/`.
+//!
+//! The parser and model crates are re-exported as [`formats`] and [`model`].
 //!
 //! The library never writes to the terminal. Presentation is the job of the
 //! caller, such as the `roadpilot-map` command-line tool.
@@ -14,6 +18,11 @@
 //! RoadPilot-Map itself. It is not part of map processing.
 
 pub mod dev;
+mod roads;
+
+pub use roadpilot_map_formats as formats;
+pub use roadpilot_map_model as model;
+pub use roads::build_road_network;
 
 /// Returns the version of this library, for example `"0.1.0"`.
 ///

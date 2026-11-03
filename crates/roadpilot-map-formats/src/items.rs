@@ -106,7 +106,7 @@ impl ItemType {
 }
 
 /// Fields of a road item whose meaning is confirmed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Road {
     /// Road look, the name of a `road_look` unit (`road.<name>`).
     pub look: Token,
@@ -114,6 +114,11 @@ pub struct Road {
     pub start_node: u64,
     /// End node. Its `backward_item` is this road.
     pub end_node: u64,
+    /// Stored length of the road, at payload offset 208. It equals the
+    /// distance between the nodes for straight roads and the curve length
+    /// for curved ones (within 0.1 % for 99.5 % of the inspected roads).
+    /// How the game computes it is not confirmed.
+    pub length: f32,
 }
 
 /// Fields of a prefab item whose meaning is confirmed.
@@ -129,7 +134,7 @@ pub struct Prefab {
 }
 
 /// Type-specific content that the parser exposes.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ItemData {
     Road(Road),
     Prefab(Prefab),
@@ -148,10 +153,12 @@ fn road(payload: &[u8]) -> Result<Road> {
     c.skip(192 - 12, "road payload")?;
     let start_node = c.uid("road start node")?;
     let end_node = c.uid("road end node")?;
+    let length = c.f32("road length")?;
     Ok(Road {
         look,
         start_node,
         end_node,
+        length,
     })
 }
 

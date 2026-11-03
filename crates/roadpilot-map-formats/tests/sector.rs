@@ -104,6 +104,7 @@ fn parses_multiple_records_with_confirmed_fields() {
     };
     assert_eq!(r.look.name().as_deref(), Some("road_a"));
     assert_eq!((r.start_node, r.end_node), (10, 11));
+    assert_eq!(r.length, 12.5);
 
     let ItemData::Prefab(p) = &base.items[1].data else {
         panic!("prefab data expected");

@@ -138,12 +138,18 @@ pub fn token(name: &str) -> u64 {
     })
 }
 
-/// Road: 212 bytes; look token at 4, start node at 192, end node at 200.
+/// Road: 212 bytes; look token at 4, start node at 192, end node at 200,
+/// length (`f32`) at 208.
 pub fn road(look: u64, start: u64, end: u64) -> Vec<u8> {
+    road_with_length(look, start, end, 12.5)
+}
+
+pub fn road_with_length(look: u64, start: u64, end: u64, length: f32) -> Vec<u8> {
     let mut p = vec![0u8; 212];
     p[4..12].copy_from_slice(&look.to_le_bytes());
     p[192..200].copy_from_slice(&start.to_le_bytes());
     p[200..208].copy_from_slice(&end.to_le_bytes());
+    p[208..212].copy_from_slice(&length.to_le_bytes());
     p
 }
 
