@@ -13,6 +13,10 @@ This folder contains the architecture documentation, decision records and plans 
 - [Library and CLI](architecture/library-and-cli.md) - responsibilities and public surface of each.
 - [Map data pipeline](architecture/pipeline.md) - stages from game files to a map package.
 
+### Testing
+
+- [Test and fixture policy](testing.md) - test categories, synthetic fixtures and game data restrictions.
+
 ### Decisions
 
 - [Architecture decision records](adr/README.md) - how decisions are recorded, and the index of all ADRs.

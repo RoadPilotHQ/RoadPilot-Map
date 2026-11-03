@@ -19,7 +19,7 @@ RoadPilot-Map/
 │   ├── roadpilot-map-package/    Map package format, writer and reader
 │   ├── roadpilot-map/            Facade library and pipeline orchestration
 │   └── roadpilot-map-cli/        Command-line interface (binary: roadpilot-map)
-├── tests/fixtures/               Synthetic test data only
+├── tests/fixtures/               Shared synthetic fixtures only (see docs/testing.md)
 └── docs/
 ```
 

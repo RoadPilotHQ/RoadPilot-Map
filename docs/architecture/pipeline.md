@@ -102,8 +102,8 @@ Map DLCs add or replace map content. The order in which archives are applied, an
 
 | Level | Data | Runs in CI |
 |---|---|---|
-| Unit tests per stage | Small synthetic fixtures written by hand in `tests/fixtures/` | Yes |
-| Pipeline tests | Synthetic installation built from fixtures | Yes |
+| Unit tests per stage | Small synthetic inputs, inline in the test code | Yes |
+| Pipeline tests | Synthetic installation built from fixtures in a temporary directory | Yes |
 | Real installation tests | User's local game install, via `ROADPILOT_MAP_GAME_DIR` | No (opt-in, ignored by default) |
 
-No real game files or generated packages are ever committed or used in CI.
+No real game files or generated packages are ever committed or used in CI. The full rules, including fixture layout and determinism, are in the [Test and fixture policy](../testing.md).
