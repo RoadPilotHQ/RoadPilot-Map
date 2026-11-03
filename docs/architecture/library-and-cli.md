@@ -2,7 +2,7 @@
 
 RoadPilot-Map consists of a reusable library and a standalone CLI ([ADR 0001](../adr/0001-rust-library-and-cli-with-local-offline-generation.md)). This document defines what each is responsible for.
 
-> **Planned.** The commands and API shapes below are proposals and may change during implementation.
+> **Status: partially implemented.** The library contains the archive reader, the sector parser and the road and node model, but not yet the end-to-end API sketched below. The CLI implements `--version` and `doctor`; all other commands are planned. Proposals in this document may change during implementation.
 
 ## Library
 
@@ -17,6 +17,17 @@ The library (the `roadpilot-map` facade and the crates below it) contains **all 
 - Build the road network, intersections and lane connectivity.
 - Write and read versioned map packages.
 - Report progress and warnings through callbacks or return values, not through printing.
+
+| Responsibility | Status |
+|---|---|
+| Discover a game installation | Planned |
+| Read SCS archives | Implemented for HashFS v2 (`roadpilot-map-archive`) |
+| Parse the relevant game files | Partially implemented: sector `.base` and `.data` files (`roadpilot-map-formats`); definition files are not parsed |
+| Build the internal map model | Partially implemented: roads and nodes (`roadpilot-map-model`, `roadpilot_map::build_road_network`) |
+| Road and lane geometry, widths, offsets, curvature and curve radius | Planned (the curve between road nodes is under investigation) |
+| Road network, intersections, lane connectivity | Partially implemented: road-to-road connections only |
+| Write and read map packages | Planned |
+| Progress reporting | Planned |
 
 In addition, the facade has a separate `dev` module with **development diagnostics** for working on RoadPilot-Map itself (used by `roadpilot-map doctor`). It is not part of map processing and has no effect on map packages.
 
@@ -39,6 +50,17 @@ read(path)                -> MapPackage        reads and validates a package
 
 Individual stages are also public so tools and tests can run them one at a time.
 
+None of the four functions above exists yet. What exists today is the stage API:
+
+| Crate | Public API today |
+|---|---|
+| `roadpilot-map-archive` | `Archive::open`, `Archive::open_with_limits`, `Archive::entries`, `Archive::find`, `Archive::read`, `Archive::read_file`, `Archive::list_dir`, `path_hash` |
+| `roadpilot-map-formats` | `parse_base`, `parse_data` (and `*_with_limits` variants) with the record types `BaseSector`, `Item`, `ItemData`, `Road`, `Prefab`, `Node`, `DataSector` |
+| `roadpilot-map-model` | `RoadNetwork` with `roads_at`, `successor`, `predecessor`, `connections`, `geometry`; `Road`, `Node`, `NodeLink`, `RoadGeometry` |
+| `roadpilot-map` (facade) | `build_road_network`, `version`, the `dev` diagnostics module, and re-exports of the parser (`formats`) and the model (`model`) |
+
+The facade does not depend on the archive reader yet; callers combine it with the facade themselves.
+
 ## CLI
 
 The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-facing layer** over the facade library.
@@ -46,7 +68,7 @@ The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-faci
 ### Responsibilities
 
 - Parse command-line arguments.
-- Locate the game installation, or accept it via `--game-dir`.
+- Locate the game installation, or accept it via `--game-dir` (planned; no command reads a game installation yet).
 - Show progress and readable errors.
 - Return meaningful exit codes.
 - Contain no map processing logic of its own.
@@ -55,12 +77,14 @@ The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-faci
 
 | Command | Purpose | Phase |
 |---|---|---|
-| `roadpilot-map --version` | Print the tool version. | 0 (done) |
+| `roadpilot-map --version` (or `-V`) | Print the tool version. | 0 (done) |
 | `roadpilot-map doctor [--project-dir <path>]` | Development diagnostics for a RoadPilot-Map checkout (see [doctor](#doctor)). | 0 (done) |
-| Game installation check (`--game-dir <path>`, command name to be decided) | Check that a folder looks like an ATS or ETS2 install and list its archives. No parsing. Originally planned as Phase 0, Step 8. | 1 |
+| Game installation check (`--game-dir <path>`, command name to be decided) | Check that a folder looks like an ATS or ETS2 install and list its archives. No parsing. Originally planned as Phase 0, Step 8. | 1 (not implemented yet) |
 | `roadpilot-map build --game-dir <path> --out <path>` | Generate a map package. | Later |
 | `roadpilot-map inspect <package>` | Show a package's manifest and summary statistics. | Later |
 | `roadpilot-map export-debug <package> --out <path>` | Write a readable debug export for development and visualization. | Later |
+
+Any other arguments, including `--help` (not implemented), print the usage text and exit with code 2.
 
 ### Exit codes (proposal)
 
@@ -72,7 +96,7 @@ The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-faci
 | 3 | Game installation not found or not recognized |
 | 4 | Processing failed (unsupported or malformed game data) |
 
-`doctor` uses code 1 when a required check fails (see below).
+Implemented today: 0, 1 (`doctor` only) and 2. Codes 3 and 4 belong to the planned commands. `doctor` uses code 1 when a required check fails (see below).
 
 ### doctor
 
