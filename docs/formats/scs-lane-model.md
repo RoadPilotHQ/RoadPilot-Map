@@ -61,7 +61,7 @@ Template looks can reference `road_template_variant` units (`template_variants_l
 
 ### Lane order
 
-Lanes keep the order of the definition list, with index 0 for the first entry. Whether index 0 is the innermost or the outermost lane is **unknown** (LM2). `lane_offsets` does not answer it, because its values are not monotonic over the index.
+Lanes keep the order of the definition list, with index 0 for the first entry. The official [ETS2 1.19 modding guide](https://modding.scssoft.com/wiki/Games/ETS2/Modding_guides/1.19) specifies that `lanes_left` and `lanes_right` entries are ordered from the road centre towards the borders. Thus index 0 is the innermost lane on either side. The ATS guide uses the same fields, but does not state their order explicitly; applying this interpretation to ATS is inferred from the shared definition format. This resolves the road-look lane order, but does not establish lane widths, lane positions, or lane continuity across junctions.
 
 ### Widths and offsets
 
@@ -73,17 +73,17 @@ Lanes keep the order of the definition list, with index 0 for the first entry. W
 | Offset count ≠ lane count | 23 (ETS2) and 1,204 (ATS) road sides | Not assigned (`OffsetsState::CountMismatch`) |
 | `road_offset` | Stored in some looks, meaning unknown | Not used |
 
-Template looks take their geometry from a 3D model template (`template_right`, a `.pmd` file), which is not read.
+Template looks take their geometry from a 3D model template (`template_right`, a `.pmd` file with a `.pmg` mesh). Step 9 studied these: [SCS road templates](scs-road-templates.md). The meshes can be read, but they do not give a reliable lane width or axis offset, so both stay unknown.
 
 ### Lane geometry (Step 8)
 
-Lane positions are **unavailable**. A lane centre line needs a lane width, the lane order and the position of the road axis relative to the node curve; the data confirms none of them (LM2, LM3), and the curve itself is only estimated (G1). Therefore:
+Lane positions are **unavailable**. A lane centre line needs a lane width and the position of the road axis relative to the node curve; neither is known (LM3), and the curve itself is only estimated (G1). Therefore:
 
 - The map package marks every lane `geometry: unavailable` and `width: null` ([Map package](map-package.md)).
 - `roadpilot_map_geometry::lane_centerline` exists for callers who supply all assumptions explicitly (`LaneAssumptions`: width, order, axis offset). There are no defaults. Its result is `estimated`, never `confirmed`, and `Quality::is_suitable_for_active_steering` is false for it.
 - The stored offsets are kept as they are (`StoredLaneOffset`). They are **not** used to compute positions, because their meaning is unknown.
 
-A lane departure warning therefore needs one of: a confirmed width and lane order from the data (for example from the `.pmd` templates of the road looks, which are not read), or a different source of lane positions.
+A lane departure warning still needs reliable width and position evidence. Road-look templates reference `.pmd` descriptors, while the model geometry is stored in paired `.pmg` files. Step 9 reads the `.pmg` vertex positions (not the `.pmd`) and finds a plausible 4.5-unit lane pitch for part of the roads, which is a derived, not a confirmed value ([SCS road templates](scs-road-templates.md)). Widths and the road-axis offset must still be established. Even with those values, the estimated road curve is not yet suitable evidence for active steering.
 
 ## Driving direction
 
@@ -174,11 +174,11 @@ The structure is identical. Differences are in the data only: ETS2 has one left-
 | ID | Question |
 |---|---|
 | LM1 | How a road selects a variant of its look (road payload offsets 28 and 36 are candidates). Needed for exact lane types. |
-| LM2 | Whether lane index 0 is the innermost or outermost lane of its side. |
-| LM3 | Meaning of the `lane_offsets` pairs and of `road_offset`; lane widths of template looks (their geometry is in `.pmd` templates). |
+| LM2 | Whether prefab slot indices correspond to road lane indices when a road meets a prefab. Road-look lane list ordering is documented for ETS2; its application to ATS follows the shared format and is inferred. |
+| LM3 | Meaning of the `lane_offsets` pairs and of `road_offset`; lane widths of template looks. Step 9: the template meshes (`.pmg`, referenced through `.pmd`) are readable and show break lines at multiples of 4.5 for part of the roads, but no lane semantics. Step 10 decoded the `.pmd` descriptors and `.mat` materials: material names are hashes, line decals can be found by effect and texture name, and lane surface and shoulder often share one material, so no lane width follows either (RT1–RT7 in [SCS road templates](scs-road-templates.md)). |
 | LM4 | Which of the two node country bytes belongs to which side of the node. |
 | LM5 | The effect of a look's `lane_direction` when it contradicts the country. |
-| LM6 | Real lane continuity across road connections (lane drops, merges, index order). Junction lanes are read from `.ppd` since Step 5; lane continuity at prefab arms with a lane count mismatch is PJ8. |
+| LM6 | Real lane continuity across road connections (lane drops and merges). Junction lanes are read from `.ppd` since Step 5; lane continuity at prefab arms with a lane count mismatch is PJ8. |
 | — | Roads whose nodes name no country (R1: 14.3 % in ETS2; 11.3 % in ATS in the previous version, 11.2 % now): which traffic side applies there. With the roads whose nodes name different countries and a few ATS exceptions, 36,418 ETS2 and 25,853 ATS roads have no known traffic side (R2, see [the road counts](../navigation/connectivity-audit.md#road-counts-and-their-definitions)). They are spread over the whole map and are the largest single reason for the small connected pieces of the navigation graph ([connectivity audit](../navigation/connectivity-audit.md), NV7). |
 
 Geometry questions (G1 and following) are in [SCS road geometry](scs-road-geometry.md).

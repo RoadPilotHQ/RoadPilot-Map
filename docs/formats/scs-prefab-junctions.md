@@ -182,7 +182,7 @@ A road's lanes meet a prefab node's slots:
 
 This also supports the lane direction rule of the lane model for two-way roads (previously only inferred).
 
-The pairing itself is by index: the n-th used slot gets the n-th lane. The lane order is not confirmed (LM2), so a **road lane to slot pairing is a candidate**.
+The pairing itself is by index: the n-th used slot gets the n-th road lane. Road-look lane order is documented for ETS2 and inferred for ATS; whether these indices correspond to prefab slot indices is not established (LM2), so a **road lane to slot pairing is a candidate**.
 
 A `LaneMovement` connects a road lane into the prefab, an internal movement, and a road lane out of it. Its status is always `MovementStatus::Candidate`.
 

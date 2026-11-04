@@ -16,6 +16,8 @@ use roadpilot_map::export::{
 };
 use roadpilot_map::{Game, InstallationError, load_installation};
 
+mod measure;
+
 /// Name of the installed binary, used in output and usage messages.
 const BIN_NAME: &str = "roadpilot-map";
 
@@ -47,6 +49,17 @@ fn main() -> ExitCode {
         [command, file] if command == "check-navigation-export" => run_check(Path::new(file)),
         [command, rest @ ..] if command == "build-package" => run_build_package(rest),
         [command, dir] if command == "check-package" => run_check_package(Path::new(dir)),
+        [command, rest @ ..] if command == "measurement-sheet" => measure::run_blank_sheet(rest),
+        [command, rest @ ..] if command == "convert-measurement-sheet" => {
+            measure::run_convert_sheet(rest)
+        }
+        [command, rest @ ..] if command == "check-measurements" => {
+            measure::run_check_measurements(rest)
+        }
+        [command, rest @ ..] if command == "import-snapshot" => measure::run_import_snapshot(rest),
+        [command, rest @ ..] if command == "measurement-candidates" => {
+            measure::run_candidates(rest)
+        }
         [] => usage_error("no arguments given"),
         _ => usage_error(&format!("unrecognized arguments: {}", args.join(" "))),
     }
@@ -64,6 +77,19 @@ fn usage_error(message: &str) -> ExitCode {
         "       {BIN_NAME} build-package --game <ets2|ats> --game-dir <path> --out <folder> [--force] [--without-navigation]"
     );
     eprintln!("       {BIN_NAME} check-package <folder>");
+    eprintln!(
+        "       {BIN_NAME} measurement-sheet --game <ets2|ats> --markings <id,id> [--points N] [--passes N] --out <file.csv> [--force]"
+    );
+    eprintln!(
+        "       {BIN_NAME} convert-measurement-sheet <sheet.csv> --out <file.jsonl> [--force]"
+    );
+    eprintln!("       {BIN_NAME} check-measurements [--package <folder>] <file.jsonl>...");
+    eprintln!(
+        "       {BIN_NAME} import-snapshot <sheet.csv> --pass <N> [--from <file>] [--replace]"
+    );
+    eprintln!(
+        "       {BIN_NAME} measurement-candidates --package <folder> --game-dir <path> [--per-template N]"
+    );
     ExitCode::from(EXIT_USAGE)
 }
 

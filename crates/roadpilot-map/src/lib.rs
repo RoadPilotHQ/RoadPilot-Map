@@ -26,11 +26,16 @@ pub mod dev;
 pub mod export;
 mod installation;
 mod lanes;
+pub mod measurement_sheet;
 mod package;
 mod prefabs;
 mod roads;
+pub mod snapshot_import;
+pub mod validation;
 
-pub use installation::{Game, InstallationError, InstallationModel, load_installation};
+pub use installation::{
+    Game, InstallationError, InstallationModel, load_installation, road_look_templates,
+};
 pub use lanes::{DefinitionsError, LaneBuildError, LaneDefinitions, build_lane_network};
 pub use package::{
     CONTENT_REVISION, PACKAGE_LIMITATIONS, PackageCheckError, PackageOptions, PackageStats,

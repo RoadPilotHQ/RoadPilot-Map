@@ -112,6 +112,8 @@ pub struct Entry {
     kind: EntryKind,
     flags: u16,
     data: Option<DataBlock>,
+    /// A plain data record accompanied by records of types 5, 6 or 7.
+    extra_records: bool,
 }
 
 impl Entry {
@@ -328,6 +330,34 @@ impl Archive {
         self.read(&found.entry)
     }
 
+    /// Finds and reads the data record of a file whose metadata has extra
+    /// records (types 5, 6 or 7, seen on `.pmg` model files).
+    ///
+    /// The extra records are **not** read and their meaning is unknown. The
+    /// data record is checked like any other (size, Adler-32, limits), so
+    /// the result is exactly the declared bytes of that record. Plain files
+    /// are read as by [`Archive::read_file`].
+    ///
+    /// # Errors
+    ///
+    /// As [`Archive::read_file`]; [`Error::UnsupportedEntry`] for entries
+    /// that are neither plain files nor plain files with extra records (for
+    /// example texture objects).
+    pub fn read_primary_record(&self, path: &str) -> Result<Vec<u8>> {
+        let found = self.find_verified(path)?;
+        let entry = found.entry;
+        self.check_own(&entry)?;
+        match entry.kind {
+            EntryKind::File => self.read_data(&entry),
+            EntryKind::Unsupported if entry.extra_records => self.read_data_checked(&entry),
+            EntryKind::Directory => Err(Error::NotAFile { hash: entry.hash }),
+            EntryKind::Unsupported => Err(Error::UnsupportedEntry {
+                hash: entry.hash,
+                reason: index::unsupported_reason(&entry),
+            }),
+        }
+    }
+
     /// Lists the children of the directory at `path` (`""` for the root), in
     /// the order of the listing.
     ///
@@ -447,17 +477,23 @@ impl Archive {
 
     /// Reads and decodes the data of a file or directory entry.
     fn read_data(&self, entry: &Entry) -> Result<Vec<u8>> {
+        if entry.kind == EntryKind::Unsupported {
+            return Err(Error::UnsupportedEntry {
+                hash: entry.hash,
+                reason: index::unsupported_reason(entry),
+            });
+        }
+        self.read_data_checked(entry)
+    }
+
+    /// Reads the data record of an entry; the caller has decided that the
+    /// entry kind allows it.
+    fn read_data_checked(&self, entry: &Entry) -> Result<Vec<u8>> {
         let hash = entry.hash;
         let data = entry.data.ok_or(Error::UnsupportedEntry {
             hash,
             reason: index::unsupported_reason(entry),
         })?;
-        if entry.kind == EntryKind::Unsupported {
-            return Err(Error::UnsupportedEntry {
-                hash,
-                reason: index::unsupported_reason(entry),
-            });
-        }
         if data.reserved != 0 {
             return Err(Error::UnsupportedEntry {
                 hash,

@@ -75,7 +75,7 @@ Archive contents are treated as untrusted input:
 | HashFS v1, ZIP-based `.scs` | `Error::NotHashFs` or `Error::UnsupportedVersion`. Only used by mods. |
 | Non-zero salt, non-zero platform, other hash methods | `Error::UnsupportedSalt`, `UnsupportedPlatform`, `UnsupportedHashMethod`. |
 | Texture objects (metadata types 1, 2, 132; GDeflate, method 3) | Kept as `EntryKind::Unsupported`. Reading gives `Error::UnsupportedEntry`. Not needed by RoadPilot. |
-| Files with extra metadata records (types 5, 6, 7 on `.pma`, `.pmg`, `.rfx`) | `EntryKind::Unsupported`. Model data, not needed. |
+| Files with extra metadata records (types 5, 6, 7 on `.pma`, `.pmg`, `.rfx`) | `EntryKind::Unsupported`; `read` and `read_file` refuse them. `Archive::read_primary_record` returns the plain data record of an entry that has exactly one plain record plus records of types 5, 6 or 7. The extra records are not read and their meaning is unknown. Used for the `.pmg` road templates ([SCS road templates](scs-road-templates.md)). |
 | Unknown entry flags, non-zero reserved word | Entry cannot be read (`Error::UnsupportedEntry`). |
 | Compression methods other than 0 and 1 | `Error::UnsupportedCompression`. |
 | Streaming large entries, extraction to disk | Not provided. Entries are read completely into memory. |

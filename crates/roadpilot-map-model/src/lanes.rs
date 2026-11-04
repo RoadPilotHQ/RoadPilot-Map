@@ -5,7 +5,8 @@
 //!
 //! - Lanes belong to the **left** or **right** side of a road, relative to
 //!   the road's stored direction (start node to end node), in definition
-//!   order. Whether index 0 is the innermost lane is not confirmed.
+//!   order. SCS documents this order as centre-to-border for ETS2; ATS uses
+//!   the same definition fields, so that interpretation is inferred there.
 //! - The **driving direction** of a lane follows from its side and the
 //!   road's traffic side: with right-hand traffic, right-side lanes run in
 //!   the stored direction and left-side lanes against it; with left-hand

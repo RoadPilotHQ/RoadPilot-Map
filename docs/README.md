@@ -16,6 +16,8 @@ This folder contains the architecture documentation, decision records and plans 
 ### Testing
 
 - [Test and fixture policy](testing.md) - test categories, synthetic fixtures and game data restrictions.
+- [Road template validation](validation/road-template-validation.md) - what telemetry can and cannot measure, the in-game measurement protocol, the measurement format, the evaluation and the acceptance criteria C0-C7 before any lane geometry may be modelled as confirmed.
+- [Measurement sheet](validation/measurement-sheet.md) - capture sheet for in-game sessions, its conversion into the measurement format, road selection, step-by-step guide for ETS2 and ATS, privacy rules, and what still has to be filled in.
 
 ### Formats
 
@@ -23,6 +25,7 @@ This folder contains the architecture documentation, decision records and plans 
 - [HashFS v2 archive reader](formats/hashfs-v2.md) - supported archive format, API, validation and limitations of `roadpilot-map-archive`.
 - [SCS lane model](formats/scs-lane-model.md) - lanes per road from road looks, traffic side per country, driving directions, candidate lane transitions; confirmed and open lane questions.
 - [SCS prefabs and junctions](formats/scs-prefab-junctions.md) - prefab descriptors (`.ppd`), prefab definitions and instances, road-to-prefab connections, internal lane movements, traffic rules and static traffic lights; confirmed and open junction questions.
+- [SCS road templates](formats/scs-road-templates.md) - the `.pmd`, `.pmg` and `.mat` files of road templates and their readers: layouts, how materials and pieces connect, what the meshes and materials show, why no lane width or axis offset follows, and the open questions RT1-RT7.
 - [SCS road geometry](formats/scs-road-geometry.md) - roads, nodes, their connections and the coordinate system; confirmed and open geometry questions.
 - [SCS sector format](formats/scs-sector-format.md) - confirmed layout of sector `.base` and `.data` files, the parser in `roadpilot-map-formats`, and open format questions.
 

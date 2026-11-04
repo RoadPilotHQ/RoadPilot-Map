@@ -243,3 +243,32 @@ pub fn load_installation(dir: &Path, game: Game) -> Result<InstallationModel, In
         skipped_archives,
     })
 }
+
+/// The template of every road look that has one: look name (`road.<name>`)
+/// to the `template_right` path without the leading `/`, read from the road
+/// look definitions of an installation. The installation is only read.
+///
+/// # Errors
+///
+/// [`InstallationError::NotRecognized`] if the folder has no `base_map.scs`,
+/// and [`InstallationError::Processing`] if a definition cannot be read.
+pub fn road_look_templates(
+    dir: &Path,
+) -> Result<std::collections::BTreeMap<String, String>, InstallationError> {
+    if !dir.join("base_map.scs").is_file() {
+        return Err(InstallationError::NotRecognized(format!(
+            "{} does not contain base_map.scs",
+            dir.display()
+        )));
+    }
+    let (archives, _) = open_archives(dir)?;
+    let units = definition_units(&archives)?;
+    Ok(units
+        .iter()
+        .filter(|u| u.class == "road_look")
+        .filter_map(|u| {
+            let t = u.value("template_right")?.trim().trim_matches('"');
+            Some((u.name.clone(), t.trim_start_matches('/').to_owned()))
+        })
+        .collect())
+}

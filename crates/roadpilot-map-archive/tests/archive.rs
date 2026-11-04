@@ -821,3 +821,89 @@ fn file_method_helper_matches_stored_and_zlib() {
         archive.read_file("z").expect("zlib")
     );
 }
+
+/// Gives the entry at `path` extra metadata records of the given types, next
+/// to its plain data record (as `.pmg` files in real archives have).
+fn add_extra_records(t: &mut common::Tables, path: &str, types: &[u8]) {
+    let row = *t.row_mut(path);
+    let plain = t.words[row.meta_index as usize];
+    let mut headers = vec![plain];
+    for &ty in types {
+        let payload = t.words.len();
+        t.words.extend([0u32; 4]);
+        headers.push(u32::from(ty) << 24 | payload as u32);
+    }
+    let first = t.words.len();
+    t.words.extend(headers.iter().copied());
+    let row = t.row_mut(path);
+    row.meta_index = first as u32;
+    row.meta_count = headers.len() as u16;
+}
+
+#[test]
+fn the_primary_record_of_a_file_with_extra_records_is_readable_on_request() {
+    let data = pattern(3000);
+    let bytes = sample()
+        .zlib_file("model/a.pmg", &data)
+        .zlib_file("model/b.pmg", &data)
+        .zlib_file("model/c.pmg", &data)
+        .build_with(|t| {
+            add_extra_records(t, "model/a.pmg", &[6]);
+            add_extra_records(t, "model/b.pmg", &[5, 6, 7]);
+            // A record type that is not known to belong here.
+            add_extra_records(t, "model/c.pmg", &[9]);
+        });
+    let (_t, archive) = open_ok("primary_record", &bytes);
+    for path in ["model/a.pmg", "model/b.pmg"] {
+        // The default read still refuses these entries.
+        assert!(matches!(
+            archive.read_file(path),
+            Err(Error::UnsupportedEntry { .. })
+        ));
+        assert_eq!(
+            archive.read_primary_record(path).expect("primary"),
+            data,
+            "{path}"
+        );
+    }
+    assert!(matches!(
+        archive.read_primary_record("model/c.pmg"),
+        Err(Error::UnsupportedEntry { .. })
+    ));
+    // Plain files and missing paths behave as with `read_file`.
+    assert_eq!(
+        archive.read_primary_record("readme.txt").expect("plain"),
+        archive.read_file("readme.txt").expect("plain")
+    );
+    assert!(matches!(
+        archive.read_primary_record("model/none.pmg"),
+        Err(Error::NotFound { .. })
+    ));
+    assert!(matches!(
+        archive.read_primary_record("def"),
+        Err(Error::NotAFile { .. })
+    ));
+}
+
+#[test]
+fn texture_objects_have_no_primary_record() {
+    let texture = path_hash("tex.tobj").expect("valid path");
+    let bytes = sample()
+        .records(
+            texture,
+            0,
+            vec![
+                (1, vec![0, 0]),
+                (2, vec![0]),
+                (132, vec![0x3000_0010, 16, 0, 4]),
+            ],
+        )
+        .build();
+    let (_t, archive) = open_ok("texture_primary", &bytes);
+    let entry = archive
+        .entries()
+        .iter()
+        .find(|e| e.hash() == texture)
+        .expect("kept in the index");
+    assert_eq!(entry.size(), None);
+}

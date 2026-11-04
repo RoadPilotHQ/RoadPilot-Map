@@ -42,10 +42,11 @@ pub const POSITION_SCALE: u32 = 256;
 
 /// Static limitations of the data, written to every export header so that
 /// consumers cannot miss them. See the specification for their meaning.
-pub const KNOWN_LIMITATIONS: [&str; 7] = [
+pub const KNOWN_LIMITATIONS: [&str; 8] = [
     "roads_without_known_traffic_side_are_not_exported",
     "lane_traversal_direction_is_candidate",
-    "lane_order_is_unknown",
+    "lane_continuity_is_unconfirmed",
+    "road_lane_to_prefab_slot_pairing_is_unconfirmed",
     "prefab_to_prefab_lane_pairing_is_unknown",
     "positions_are_map_node_positions_not_lane_positions",
     "curve_geometry_is_not_exported",

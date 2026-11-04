@@ -38,10 +38,9 @@ use crate::installation::InstallationModel;
 pub const CONTENT_REVISION: u32 = 1;
 
 /// Known limitations of the package data. See the specification.
-pub const PACKAGE_LIMITATIONS: [&str; 9] = [
+pub const PACKAGE_LIMITATIONS: [&str; 8] = [
     "lane_positions_are_unavailable",
     "lane_widths_are_not_stored",
-    "lane_order_is_unknown",
     "road_curve_is_estimated",
     "world_unit_is_unconfirmed",
     "road_connections_are_candidates",

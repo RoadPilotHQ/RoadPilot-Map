@@ -123,7 +123,7 @@ All UIDs are lower-case hexadecimal strings without prefix (see [Identifiers](#i
 | Field | Meaning |
 |---|---|
 | `side` | `left` or `right` of the stored road direction (start to end node) |
-| `index` | Position in the definition order of the road look. Whether 0 is the inner lane is unknown (LM2) |
+| `index` | Position in the road-look definition order; 0 is the lane nearest the road centre (ETS2 documented; ATS inferred from the shared format) |
 | `type` | Lane type name |
 | `type_certain` | `false` if the type depends on a road look variant that the data does not let us choose (LM1) |
 | `direction` | `forward` (start to end), `backward`, or `null` if the traffic side is unknown. The rule behind it is measured, not confirmed (NV1) |
@@ -303,7 +303,6 @@ The codes in the manifest's `limitations` array:
 |---|---|
 | `lane_positions_are_unavailable` | No lane has a position. No lane width is stored (LM3) |
 | `lane_widths_are_not_stored` | `width` is `null` for every lane |
-| `lane_order_is_unknown` | Whether lane index 0 is the inner or outer lane is unknown (LM2). All lane pairings are by index |
 | `road_curve_is_estimated` | The curve between two nodes is a model (G1); about 0.5 % of the roads do not even reproduce the stored length |
 | `world_unit_is_unconfirmed` | The physical unit of a world unit is not confirmed (T3). Lengths and distances are in world units, not meters |
 | `road_connections_are_candidates` | No road-to-road lane connection is confirmed (LM6) |

@@ -1,0 +1,34 @@
+# RoadPilot-Map template measurement sheet (schema 1.1). One sheet = one session on one road.
+# Fill in the session row first. Never enter names, profile names, save games or screenshot paths.
+# Copy x, y, z, heading, pitch, roll and speed exactly as the telemetry frame gives them (dot as decimal separator).
+# criterion_met: yes if the tyre edge was on the marking part when the frame was taken, otherwise no (keep the row).
+# Leave a row's x, y, z and heading empty if it was not measured; it is then skipped. No commas or quotes in notes.
+# See docs/validation/measurement-sheet.md.
+record,game,game_patch,telemetry_game_version,package_content_id,template,road,look,variant,section,trailer,local_scale,synthetic,marking,marking_part,template_x,point,pass,direction,tyre,criterion_met,frame_session,frame_sequence,x,y,z,heading,pitch,roll,speed_mps,uncertainty_m,notes
+session,ets2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+candidate,,,,,,,,,,,,,centre,centre,,,,,,,,,,,,,,,,,
+candidate,,,,,,,,,,,,,edge_right,centre,,,,,,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p1,1,forward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p1,2,forward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p1,3,backward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p1,4,backward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p2,5,forward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p2,6,forward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p2,7,backward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p2,8,backward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p3,9,forward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p3,10,forward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p3,11,backward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,centre,centre,,p3,12,backward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p1,13,forward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p1,14,forward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p1,15,backward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p1,16,backward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p2,17,forward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p2,18,forward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p2,19,backward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p2,20,backward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p3,21,forward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p3,22,forward,right,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p3,23,backward,left,,,,,,,,,,,,
+observation,,,,,,,,,,,,,edge_right,centre,,p3,24,backward,right,,,,,,,,,,,,

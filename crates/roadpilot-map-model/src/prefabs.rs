@@ -590,8 +590,8 @@ impl PrefabNetwork {
     }
 
     /// The road lanes paired with the used slots of `arm`, as `(slot, lane)`,
-    /// or why they cannot be paired. The pairing is by index and therefore a
-    /// candidate (open question LM2).
+    /// or why they cannot be paired. The pairing is by index; whether road
+    /// lane indices correspond to prefab slot indices is unconfirmed (LM2).
     ///
     /// # Errors
     ///

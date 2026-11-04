@@ -46,6 +46,9 @@ const KNOWN_FLAGS: u16 = FLAG_DIRECTORY | FLAG_BIT_2;
 
 const META_PLAIN: u32 = 128;
 const META_DIRECTORY: u32 = 129;
+const META_EXTRA_5: u32 = 5;
+const META_EXTRA_6: u32 = 6;
+const META_EXTRA_7: u32 = 7;
 const PAYLOAD_WORDS: usize = 4;
 
 /// Location and encoding of an entry's data.
@@ -250,23 +253,28 @@ fn parse_entry(row: &[u8], index: u32, words: &[u32], file_len: u64) -> Result<E
         .and_then(|end| words.get(first..end))
         .ok_or_else(|| invalid("the metadata records lie outside the metadata table"))?;
 
+    let data_block = |word: u32| -> Result<DataBlock> {
+        let start = (word & 0x00FF_FFFF) as usize;
+        let payload = words
+            .get(start..start + PAYLOAD_WORDS)
+            .ok_or_else(|| invalid("the data record lies outside the metadata table"))?;
+        let data = DataBlock {
+            stored_size: payload[0] & 0x0FFF_FFFF,
+            method: (payload[0] >> 28) as u8,
+            size: payload[1],
+            reserved: payload[2],
+            offset: u64::from(payload[3]) * 16,
+        };
+        match data.offset.checked_add(u64::from(data.stored_size)) {
+            Some(end) if data.offset >= HEADER_LEN as u64 && end <= file_len => Ok(data),
+            _ => Err(invalid("the data lies outside the archive")),
+        }
+    };
+
+    let mut extra_records = false;
     let (kind, data) = match headers {
         [word] if word >> 24 == META_PLAIN || word >> 24 == META_DIRECTORY => {
-            let start = (word & 0x00FF_FFFF) as usize;
-            let payload = words
-                .get(start..start + PAYLOAD_WORDS)
-                .ok_or_else(|| invalid("the data record lies outside the metadata table"))?;
-            let data = DataBlock {
-                stored_size: payload[0] & 0x0FFF_FFFF,
-                method: (payload[0] >> 28) as u8,
-                size: payload[1],
-                reserved: payload[2],
-                offset: u64::from(payload[3]) * 16,
-            };
-            match data.offset.checked_add(u64::from(data.stored_size)) {
-                Some(end) if data.offset >= HEADER_LEN as u64 && end <= file_len => {}
-                _ => return Err(invalid("the data lies outside the archive")),
-            }
+            let data = data_block(*word)?;
             let is_dir = word >> 24 == META_DIRECTORY;
             if is_dir != (flags & FLAG_DIRECTORY != 0) {
                 return Err(invalid("the directory flag does not match the metadata"));
@@ -280,7 +288,28 @@ fn parse_entry(row: &[u8], index: u32, words: &[u32], file_len: u64) -> Result<E
             };
             (kind, Some(data))
         }
-        // Texture objects, files with extra records, unknown record types.
+        // One plain record plus records of types 5, 6 or 7 (seen on `.pmg`
+        // files). The extra records are not read; the plain record is only
+        // reachable through `Archive::read_primary_record`.
+        records
+            if flags & !KNOWN_FLAGS == 0
+                && flags & FLAG_DIRECTORY == 0
+                && records.iter().filter(|w| *w >> 24 == META_PLAIN).count() == 1
+                && records.iter().all(|w| {
+                    matches!(
+                        *w >> 24,
+                        META_PLAIN | META_EXTRA_5 | META_EXTRA_6 | META_EXTRA_7
+                    )
+                }) =>
+        {
+            let plain = records
+                .iter()
+                .find(|w| *w >> 24 == META_PLAIN)
+                .ok_or_else(|| invalid("the plain record disappeared"))?;
+            extra_records = true;
+            (EntryKind::Unsupported, Some(data_block(*plain)?))
+        }
+        // Texture objects, other files with extra records, unknown record types.
         _ => (EntryKind::Unsupported, None),
     };
     Ok(Entry {
@@ -289,12 +318,15 @@ fn parse_entry(row: &[u8], index: u32, words: &[u32], file_len: u64) -> Result<E
         kind,
         flags,
         data,
+        extra_records,
     })
 }
 
 /// Why an unsupported entry cannot be read.
 pub(crate) fn unsupported_reason(entry: &Entry) -> &'static str {
-    if entry.data.is_none() {
+    if entry.extra_records {
+        "it has extra metadata records; use Archive::read_primary_record to read its data record"
+    } else if entry.data.is_none() {
         "its metadata records are not a single plain file or directory record \
          (for example a texture object or a file with extra records)"
     } else if entry.flags & !KNOWN_FLAGS != 0 {

@@ -1,8 +1,10 @@
 //! Lane centre lines from explicit assumptions.
 //!
-//! The game data stores **no lane width**, the order of the lane indices is
-//! unconfirmed (LM2), the meaning of the stored lane offsets is unknown (LM3)
-//! and the position of the road axis relative to the node curve is unknown.
+//! The game data stores **no lane width**, the meaning of the stored lane
+//! offsets is unknown (LM3), and the position of the road axis relative to
+//! the node curve is unknown. Road-look order is documented for ETS2 and
+//! inferred for ATS, but this helper still requires callers to choose an
+//! order explicitly.
 //! A lane centre line therefore cannot be derived from the data. This module
 //! offers one only for callers who state all of these assumptions
 //! explicitly; there are no defaults. The result is always
@@ -28,7 +30,7 @@ pub enum LaneOrder {
 pub struct LaneAssumptions {
     /// Width of every lane, world units. Must be finite and positive.
     pub lane_width: f64,
-    /// Lane index order (LM2).
+    /// Lane index order, which callers must provide explicitly.
     pub order: LaneOrder,
     /// Distance between the node curve and the inner edge of the first lane
     /// of each side, world units. `0.0` assumes the node curve is the road

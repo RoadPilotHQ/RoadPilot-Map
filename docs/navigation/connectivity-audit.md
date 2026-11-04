@@ -228,7 +228,7 @@ The evidence is strong but not conclusive:
 
 **`Candidate` remains justified.** What is missing for `Confirmed`: an explanation of the contradicting prefabs, a source that states the direction (or a confirmed meaning of the country bytes, LM4), and a decision about roads without country.
 
-Upgrading this status alone would **not** make confirmed-only routes useful. The next steps of every route (a road to the next road, a road lane to a prefab slot) are index pairings that depend on the lane order (LM2). Confirmed-only routes along roads need LM2 as well.
+Upgrading this status alone would **not** make confirmed-only routes useful. Road-look lane order is documented, but real lane continuity between road links (LM6) and road-lane-to-prefab-slot correspondence (LM2) remain unconfirmed.
 
 ## 10. Root causes
 
@@ -244,7 +244,7 @@ None. Evidence: node and edge counts agree with the models; all edge endpoints a
 ### Unconfirmed interpretation of the format
 
 - **Prefab-to-prefab joints** (PJ4). 13,457 joints in ETS2 and 16,162 in ATS. Their slot counts are consistent in both directions for 11,684 (87 %) and 14,185 (88 %) of them. The counts alone do not give a pairing.
-- **Lane order** (LM2) and lane continuity (LM6, PJ8): candidates at roads and prefab arms; mismatches at 4,400 arm sides.
+- **Lane continuity** (LM6) and road-lane-to-prefab-slot correspondence (LM2, PJ8): candidates at roads and prefab arms; mismatches at 4,400 arm sides.
 - The along-lane direction (NV1).
 
 ### Expected disconnections
@@ -270,7 +270,7 @@ None. Evidence: node and edge counts agree with the models; all edge endpoints a
 
 1. **Country-less roads** (LM4): find out how the game decides the traffic side of roads whose nodes name no country. Largest effect on the number of connected pieces.
 2. **Prefab joints** (PJ4): find out whether the slots of two joined prefabs can be paired from the data (for example by the position of the slot curves at the shared node, compared in the local frame of the node). This would be a research test, not snapping in the graph, and it needs an approval before any edge is changed. 87 % of the joints have consistent slot counts.
-3. **Lane order** (LM2): needed for any confirmed connection across roads.
+3. **Road lane to prefab slot mapping** (LM2) and actual lane continuity (LM6): needed for confirmed connections through the network.
 4. **Contradicting prefabs** (NV1).
 
 **Can safely remain open:** dead ends and open prefab nodes, zero-lane roads, unresolved UIDs (a few dozen), the lane count mismatches at prefab arms (about 3 % of arm sides), the 860 and 1,030 unresolved prefab instances.

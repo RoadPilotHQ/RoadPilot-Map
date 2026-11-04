@@ -83,6 +83,11 @@ The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-faci
 | `roadpilot-map check-navigation-export <file>` | Check an export file against the specification and print a summary. | 1 (done) |
 | `roadpilot-map build-package --game <ets2\|ats> --game-dir <path> --out <folder> [--force] [--without-navigation]` | Load the models of an installation and write a map package folder ([format](../formats/map-package.md)). | 1 (done) |
 | `roadpilot-map check-package <folder>` | Validate a package: manifest, checksums, geometry file, navigation file and their agreement. | 1 (done) |
+| `roadpilot-map measurement-sheet --game <ets2\|ats> --markings <ids> [--points N] [--passes N] --out <file.csv> [--force]` | Write a blank capture sheet for an in-game template session ([measurement sheet](../validation/measurement-sheet.md)). | 1 (done) |
+| `roadpilot-map convert-measurement-sheet <sheet.csv> --out <file.jsonl> [--force]` | Convert a filled sheet into the measurement format. | 1 (done) |
+| `roadpilot-map check-measurements [--package <folder>] <file.jsonl>...` | Check measurement files; with a package, evaluate them and apply the acceptance criteria ([validation](../validation/road-template-validation.md)). The best verdict is "criteria met, pending review". | 1 (done) |
+| `roadpilot-map import-snapshot <sheet.csv> --pass <N> [--from <file>] [--replace]` | Put one RoadPilot-Telemetry frame snapshot line (from stdin or a file) into one planned row of a capture sheet; refuses anything but a complete, fresh frame ([measurement sheet](../validation/measurement-sheet.md)). | 1 (done) |
+| `roadpilot-map measurement-candidates --package <folder> --game-dir <path> [--per-template N]` | List straight roads per template as unverified measuring candidates. | 1 (done) |
 | Game installation check (`--game-dir <path>`, command name to be decided) | Check that a folder looks like an ATS or ETS2 install and list its archives. No parsing. Originally planned as Phase 0, Step 8. | 1 (not implemented yet) |
 | `roadpilot-map inspect <package>` | Show a package's manifest and summary statistics (`check-package` prints a summary today). | Later |
 | `roadpilot-map export-debug <package> --out <path>` | Write a readable debug export for development and visualization. | Later |

@@ -9,7 +9,7 @@
 
 RoadPilot needs a stable, versioned contract for map display, map matching and route planning ([open questions T5, T6](../open-questions.md)). Phase 1 already produced a versioned JSON Lines export of the navigation graph ([Navigation graph export](../navigation/navigation-export.md)). What is missing is geometry: node data, road curves, lanes with their evidence level, junctions and a way to find roads near a position.
 
-Constraints: map data is derived from the user's local installation and is not distributed ([ADR 0001](0001-rust-library-and-cli-with-local-offline-generation.md), L2). Several geometric values are not known (curve G1, unit T3, lane widths and order LM2/LM3), so the format must carry the evidence level of every value instead of a bare number. The consuming application's language and performance needs (T5, T7) are not specified yet.
+Constraints: map data is derived from the user's local installation and is not distributed ([ADR 0001](0001-rust-library-and-cli-with-local-offline-generation.md), L2). Several geometric values are not known (curve G1, unit T3, lane widths and offsets LM3), so the format must carry the evidence level of every value instead of a bare number. Road-look lane ordering is documented for ETS2 and inferred for ATS; road-to-prefab slot mapping remains open (LM2). The consuming application's language and performance needs (T5, T7) are not specified yet.
 
 ## Decision
 
@@ -58,5 +58,5 @@ RoadPilot-Map will write a **package folder** with `manifest.json`, `geometry.js
 
 - Measure reader memory and load time and agree targets (T7).
 - Decide with the RoadPilot application whether it reads JSON directly or needs a binary encoding (T5).
-- Add confirmed lane geometry once lane widths and the lane order are established (LM2, LM3, T11).
+- Add lane geometry once lane widths and the road-axis offset are established (LM3, T11); lane order is documented for ETS2 and inferred for ATS.
 - Replace the curve estimate once the game's curve is understood (G1).
