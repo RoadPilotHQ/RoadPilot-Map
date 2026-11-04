@@ -57,7 +57,7 @@ None of the four functions above exists yet. What exists today is the stage API:
 | `roadpilot-map-archive` | `Archive::open`, `Archive::open_with_limits`, `Archive::entries`, `Archive::find`, `Archive::read`, `Archive::read_file`, `Archive::list_dir`, `path_hash` |
 | `roadpilot-map-formats` | `parse_base`, `parse_data` (and `*_with_limits` variants) with the record types `BaseSector`, `Item`, `ItemData`, `Road`, `Prefab`, `Node`, `DataSector`; `sii::parse_sii` and the `definitions` records; `ppd::parse_ppd` with `PrefabDescriptor` |
 | `roadpilot-map-model` | `RoadNetwork` with `roads_at`, `successor`, `predecessor`, `connections`, `geometry`; `Road`, `Node`, `NodeLink`, `RoadGeometry`; `LaneNetwork` with `road`, `transition`; `RoadLanes`, `Lane`; `PrefabNetwork` with `instance`, `definition`, `arms`, `movements`, `lane_movements`; `PrefabInstance`, `PrefabDefinition`, `PrefabMovement`, `LaneMovement`; `NavigationGraph` with `build`, `route`, `reachable_from`; `NavigationGraphBuilder`, `Route`, `RoutingMode`, `ConnectionStatus` |
-| `roadpilot-map` (facade) | `build_road_network`, `LaneDefinitions`, `build_lane_network`, `PrefabDefinitions`, `build_prefab_network`, `load_installation`, `Game`, `export` (`write_navigation_export`, `write_navigation_export_file`, `check_navigation_export`, `read_navigation_export`), `version`, the `dev` diagnostics module, and re-exports of the parser (`formats`) and the model (`model`) |
+| `roadpilot-map` (facade) | `build_road_network`, `LaneDefinitions`, `build_lane_network`, `PrefabDefinitions`, `build_prefab_network`, `load_installation`, `Game`, `export` (`write_navigation_export`, `write_navigation_export_file`, `check_navigation_export`, `read_navigation_export`), `write_package`, `check_package`, `check_package_output`, `PackageOptions`, `version`, the `dev` diagnostics module, and re-exports of the parser (`formats`), the model (`model`), the geometry (`geometry`) and the package format (`map_package`) |
 
 The facade depends on the archive reader since Step 7 and reads the archives of an installation in `load_installation`. The single-step functions (`build_prefab_network` takes a function that loads a file by archive path) remain available for tests and tools.
 
@@ -81,9 +81,10 @@ The CLI (`roadpilot-map-cli`, binary name `roadpilot-map`) is a **thin user-faci
 | `roadpilot-map doctor [--project-dir <path>]` | Development diagnostics for a RoadPilot-Map checkout (see [doctor](#doctor)). | 0 (done) |
 | `roadpilot-map export-navigation --game <ets2\|ats> --game-dir <path> --out <file> [--force]` | Load the navigation model of an installation and write the navigation graph export ([format](../navigation/navigation-export.md)). | 1 (done) |
 | `roadpilot-map check-navigation-export <file>` | Check an export file against the specification and print a summary. | 1 (done) |
+| `roadpilot-map build-package --game <ets2\|ats> --game-dir <path> --out <folder> [--force] [--without-navigation]` | Load the models of an installation and write a map package folder ([format](../formats/map-package.md)). | 1 (done) |
+| `roadpilot-map check-package <folder>` | Validate a package: manifest, checksums, geometry file, navigation file and their agreement. | 1 (done) |
 | Game installation check (`--game-dir <path>`, command name to be decided) | Check that a folder looks like an ATS or ETS2 install and list its archives. No parsing. Originally planned as Phase 0, Step 8. | 1 (not implemented yet) |
-| `roadpilot-map build --game-dir <path> --out <path>` | Generate a map package. | Later |
-| `roadpilot-map inspect <package>` | Show a package's manifest and summary statistics. | Later |
+| `roadpilot-map inspect <package>` | Show a package's manifest and summary statistics (`check-package` prints a summary today). | Later |
 | `roadpilot-map export-debug <package> --out <path>` | Write a readable debug export for development and visualization. | Later |
 
 Any other arguments, including `--help` (not implemented), print the usage text and exit with code 2.
@@ -98,7 +99,7 @@ Any other arguments, including `--help` (not implemented), print the usage text 
 | 3 | Game installation not found or not recognized |
 | 4 | Processing failed (unsupported or malformed game data) |
 
-Implemented today: 0, 1, 2, 3 and 4. `doctor` uses code 1 when a required check fails (see below). `export-navigation` uses 1 for problems with the output (file exists, folder missing, inside the game folder, write error), 3 if the folder is not an installation of the game, and 4 if game data or the models are invalid. `check-navigation-export` uses 4 for an invalid or unsupported file and 1 if the file cannot be read.
+Implemented today: 0, 1, 2, 3 and 4. `doctor` uses code 1 when a required check fails (see below). `export-navigation` uses 1 for problems with the output (file exists, folder missing, inside the game folder, write error), 3 if the folder is not an installation of the game, and 4 if game data or the models are invalid. `check-navigation-export` uses 4 for an invalid or unsupported file and 1 if the file cannot be read. `build-package` follows `export-navigation` (the output is a folder; `--force` replaces only a folder that holds package files), and `check-package` uses 4 for an invalid package (manifest, checksum, geometry or navigation file, or a disagreement between them) and 1 if the folder cannot be read.
 
 ### doctor
 

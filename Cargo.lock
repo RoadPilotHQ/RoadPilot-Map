@@ -23,7 +23,9 @@ version = "0.1.0"
 dependencies = [
  "roadpilot-map-archive",
  "roadpilot-map-formats",
+ "roadpilot-map-geometry",
  "roadpilot-map-model",
+ "roadpilot-map-package",
 ]
 
 [[package]]
@@ -48,5 +50,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "roadpilot-map-geometry"
+version = "0.1.0"
+dependencies = [
+ "roadpilot-map-model",
+]
+
+[[package]]
 name = "roadpilot-map-model"
 version = "0.1.0"
+
+[[package]]
+name = "roadpilot-map-package"
+version = "0.1.0"
+dependencies = [
+ "roadpilot-map-model",
+]

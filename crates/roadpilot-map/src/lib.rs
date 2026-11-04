@@ -26,14 +26,21 @@ pub mod dev;
 pub mod export;
 mod installation;
 mod lanes;
+mod package;
 mod prefabs;
 mod roads;
 
 pub use installation::{Game, InstallationError, InstallationModel, load_installation};
 pub use lanes::{DefinitionsError, LaneBuildError, LaneDefinitions, build_lane_network};
+pub use package::{
+    CONTENT_REVISION, PACKAGE_LIMITATIONS, PackageCheckError, PackageOptions, PackageStats,
+    PackageSummary, PackageWriteError, check_package, check_package_output, write_package,
+};
 pub use prefabs::{PrefabDefinitions, build_prefab_network};
 pub use roadpilot_map_formats as formats;
+pub use roadpilot_map_geometry as geometry;
 pub use roadpilot_map_model as model;
+pub use roadpilot_map_package as map_package;
 pub use roads::build_road_network;
 
 /// Returns the version of this library, for example `"0.1.0"`.

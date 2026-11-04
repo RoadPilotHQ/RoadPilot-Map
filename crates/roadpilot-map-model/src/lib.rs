@@ -24,8 +24,12 @@
 //! (confirmed, candidate, unknown, forbidden) and origin as directed edges,
 //! and a route search that never uses unconfirmed connections silently.
 //!
-//! Not modelled yet: curves between nodes, lane geometry, speed limits,
-//! signal states. See `docs/formats/scs-road-geometry.md`,
+//! The evidence level of geometric values, [`Quality`], is defined here so that
+//! the geometry and package crates can share it. The curve between nodes is
+//! estimated in `roadpilot-map-geometry`; it is not part of this model.
+//!
+//! Not modelled yet: confirmed curves between nodes, lane geometry, speed
+//! limits, signal states. See `docs/formats/scs-road-geometry.md`,
 //! `docs/formats/scs-lane-model.md` and `docs/formats/scs-prefab-junctions.md`.
 //!
 //! ```
@@ -63,6 +67,7 @@ mod lanes;
 mod navigation;
 mod network;
 mod prefabs;
+mod quality;
 mod routing;
 
 pub use geometry::{Position, RoadGeometry, Rotation};
@@ -84,4 +89,5 @@ pub use prefabs::{
     PrefabLaneMovements, PrefabMovement, PrefabNetwork, PrefabResolution, PrefabSemaphore, RuleRef,
     SlotDirection,
 };
+pub use quality::Quality;
 pub use routing::{Route, RouteConfirmation, RouteCost, RouteError, RouteStep, RoutingMode};

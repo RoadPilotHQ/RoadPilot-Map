@@ -5,7 +5,9 @@ members = [
     "crates/roadpilot-map-archive",
     "crates/roadpilot-map-cli",
     "crates/roadpilot-map-formats",
+    "crates/roadpilot-map-geometry",
     "crates/roadpilot-map-model",
+    "crates/roadpilot-map-package",
 ]
 
 [workspace.package]
@@ -21,6 +23,8 @@ publish = false
 roadpilot-map = { path = "crates/roadpilot-map", version = "0.1.0" }
 roadpilot-map-archive = { path = "crates/roadpilot-map-archive", version = "0.1.0" }
 roadpilot-map-formats = { path = "crates/roadpilot-map-formats", version = "0.1.0" }
+roadpilot-map-geometry = { path = "crates/roadpilot-map-geometry", version = "0.1.0" }
+roadpilot-map-package = { path = "crates/roadpilot-map-package", version = "0.1.0" }
 roadpilot-map-model = { path = "crates/roadpilot-map-model", version = "0.1.0" }
 
 [workspace.lints.rust]

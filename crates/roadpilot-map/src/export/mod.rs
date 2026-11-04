@@ -8,7 +8,6 @@
 //! reference reader ([`read_navigation_export`]) that checks a file against
 //! the specification.
 
-mod json;
 mod reader;
 
 use std::fmt::{self, Write as _};
@@ -20,6 +19,7 @@ use roadpilot_map_model::{
     LaneNetwork, NavNode, NavigationGraph, NodeId, PrefabNetwork, RoadNetwork, RoadSide,
     SlotDirection, TransitionIssue,
 };
+use roadpilot_map_package::json;
 
 use crate::installation::{Game, InstallationModel};
 

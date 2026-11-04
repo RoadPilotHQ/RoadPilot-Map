@@ -1,7 +1,9 @@
-//! A small JSON reader and writer helpers for the export lines.
+//! A small JSON reader and writer helpers for the line formats of
+//! RoadPilot-Map (the navigation graph export and the map package).
 //!
-//! The reader accepts standard JSON for one value, with a depth limit, and
-//! is meant for the reference reader of the export format only.
+//! The reader accepts standard JSON for one value, with a depth limit. It is
+//! an internal helper that is public so that the facade crate can share it;
+//! it is not a general-purpose JSON library.
 
 use std::fmt::Write as _;
 
@@ -10,7 +12,7 @@ const MAX_DEPTH: usize = 16;
 
 /// A parsed JSON value. Objects keep their member order.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Json {
+pub enum Json {
     Null,
     Bool(bool),
     Int(i64),
@@ -21,35 +23,44 @@ pub(crate) enum Json {
 }
 
 impl Json {
-    pub(crate) fn get(&self, key: &str) -> Option<&Json> {
+    pub fn get(&self, key: &str) -> Option<&Json> {
         match self {
             Self::Obj(members) => members.iter().find(|(k, _)| k == key).map(|(_, v)| v),
             _ => None,
         }
     }
 
-    pub(crate) fn as_str(&self) -> Option<&str> {
+    pub fn as_str(&self) -> Option<&str> {
         match self {
             Self::Str(s) => Some(s),
             _ => None,
         }
     }
 
-    pub(crate) fn as_i64(&self) -> Option<i64> {
+    pub fn as_i64(&self) -> Option<i64> {
         match self {
             Self::Int(i) => Some(*i),
             _ => None,
         }
     }
 
-    pub(crate) fn as_bool(&self) -> Option<bool> {
+    /// An integer or float as `f64`.
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            Self::Int(i) => Some(*i as f64),
+            Self::Float(f) => Some(*f),
+            _ => None,
+        }
+    }
+
+    pub fn as_bool(&self) -> Option<bool> {
         match self {
             Self::Bool(b) => Some(*b),
             _ => None,
         }
     }
 
-    pub(crate) fn as_array(&self) -> Option<&[Json]> {
+    pub fn as_array(&self) -> Option<&[Json]> {
         match self {
             Self::Arr(a) => Some(a),
             _ => None,
@@ -59,7 +70,7 @@ impl Json {
 
 /// Parses one JSON value that fills the whole input (surrounding white space
 /// is allowed).
-pub(crate) fn parse(input: &str) -> Result<Json, String> {
+pub fn parse(input: &str) -> Result<Json, String> {
     let mut p = Parser {
         bytes: input.as_bytes(),
         pos: 0,
@@ -275,7 +286,7 @@ impl Parser<'_> {
 }
 
 /// Appends `s` as a JSON string, escaped.
-pub(crate) fn push_str(out: &mut String, s: &str) {
+pub fn push_str(out: &mut String, s: &str) {
     out.push('"');
     for c in s.chars() {
         match c {
@@ -293,8 +304,24 @@ pub(crate) fn push_str(out: &mut String, s: &str) {
     out.push('"');
 }
 
+/// Appends a finite `f64` in its shortest round-trip decimal form. The same
+/// value always gives the same text. Returns `false` and writes `null` for a
+/// value that is not finite (the caller must treat that as an error).
+pub fn push_f64(out: &mut String, v: f64) -> bool {
+    if v.is_finite() {
+        // `Display` for f64 is the shortest text that reads back exactly and
+        // never uses an exponent, so it is valid JSON. `-0` is normalized.
+        let v = if v == 0.0 { 0.0 } else { v };
+        let _ = write!(out, "{v}");
+        true
+    } else {
+        out.push_str("null");
+        false
+    }
+}
+
 /// Appends a 64-bit identifier as a lower-case hexadecimal JSON string.
-pub(crate) fn push_hex(out: &mut String, v: u64) {
+pub fn push_hex(out: &mut String, v: u64) {
     let _ = write!(out, "\"{v:x}\"");
 }
 

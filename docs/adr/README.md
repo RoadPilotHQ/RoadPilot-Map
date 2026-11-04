@@ -36,14 +36,14 @@ ADRs are not rewritten after acceptance. To change a decision, write a new ADR t
 | ADR | Title | Status |
 |---|---|---|
 | [0001](0001-rust-library-and-cli-with-local-offline-generation.md) | Rust library and CLI with local offline generation | Accepted |
+| [0002](0002-map-package-format-and-versioning.md) | Map package format and versioning | Accepted |
 
 ## Planned ADRs
 
 These decisions are known to be needed and will each receive their own ADR:
 
-- Map package format and data encoding
-- Map package versioning scheme
-- Coordinate system and units
+- Coordinate system and units (the package keeps native coordinates and states the unit as unconfirmed; the decision about a transformed system is open)
+- A binary package encoding, if the consuming application needs one (see [ADR 0002](0002-map-package-format-and-versioning.md))
 - Spline and lane geometry representation
 - Handling of DLC load order and overrides
 - Final software license (after legal review)

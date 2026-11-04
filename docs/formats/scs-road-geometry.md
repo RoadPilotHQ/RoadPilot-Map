@@ -82,7 +82,19 @@ Roads are not straight segments in general. About 23 % of the ETS2 roads turn by
 | Circular-arc estimate `distance · (θ/2) / sin(θ/2)` | 95.5 % (both games) | 80–87 % for turns below 30°, 6–8 % for 60–90° |
 | The stored length itself | 99.46 % (ETS2), 99.60 % (ATS) | 81 % (ETS2), 86 % (ATS) overall; 0.1 % for 90–120°; fails above 120° |
 
-Two further tests also failed: no fixed polyline resolution reproduces the stored length exactly, and a fixed point (tangent length = arc length) matches only 57–64 % of the roads that turn by more than 45°. The curve formula is therefore **open question G1**, and the model provides **no curve interpolation**. It exposes only what is confirmed, as `RoadGeometry`: the end positions, the forward directions at both ends, the straight-line distance and the stored length.
+Two further tests also failed: no fixed polyline resolution reproduces the stored length exactly, and a fixed point (tangent length = arc length) matches only 57–64 % of the roads that turn by more than 45°. The curve formula is therefore **open question G1**. The model (`roadpilot-map-model`) still exposes only what is confirmed, as `RoadGeometry`: the end positions, the forward directions at both ends, the straight-line distance and the stored length.
+
+### Estimated curve (Step 8)
+
+`roadpilot-map-geometry` offers `RoadCurve`, an **estimate** that is always labelled `estimated`, never `confirmed`: the cubic Hermite curve with the stored road length as tangent length (the third row of the table, model name `hermite_stored_length`). Of the three tangent choices it is the one that reproduces the stored length best, and it is cheap and deterministic. It does not resolve G1:
+
+- It fits the **length** (99.46 % of ETS2 and 99.60 % of ATS roads within 0.1 %, measured again in Step 8 on the whole map; by turn angle see [Map package](map-package.md#accuracy-of-the-curve-estimate)). It fails above about 120° of turn (0.0 % of 500 ETS2 roads, 0.3 % of 341 ATS roads).
+- The length is the only reference the data offers. Whether the **shape** and so the lateral position of the curve match the game's is not measured and not known.
+- Every road carries its own `length_deviation` and `length_consistent`, so a consumer can see where the estimate is doubtful.
+
+Nothing about the curve is confirmed by this step. The box that contains the estimated curve (`RoadCurve::bounds`, the box of the Bézier control points) is exact for the estimate and says nothing about the real road.
+
+The model of the position of a point on the curve, `RoadCurve::project`, works on the estimate in the same way.
 
 ## Model
 
@@ -116,8 +128,8 @@ No structural difference was found. All rules above hold for both games; only th
 
 | ID | Question |
 |---|---|
-| G1 | The exact curve between two nodes: the tangent length (and whether it is a Hermite spline at all for sharp turns above 120°). Needed for lane geometry and curvature. |
-| G2 | The world unit (T3). The scale ÷ 256 and the axes are confirmed, the unit is not. The navigation graph (Step 6) therefore uses no road length and no distance; its cost is the number of edges. |
+| G1 | The exact curve between two nodes: the tangent length (and whether it is a Hermite spline at all for sharp turns above 120°). Needed for lane geometry and curvature. Step 8 added a labelled estimate (see above); the question stays open. A reference for the **position** of the curve (not only its length) would be needed to measure its accuracy. |
+| G2 | The world unit (T3). The scale ÷ 256 and the axes are confirmed, the unit is not. The navigation graph (Step 6) therefore uses no road length and no distance; its cost is the number of edges. The package keeps lengths in world units and says so (`world_unit: unconfirmed`). |
 | G3 | What the remaining 200 bytes of the road payload contain. Some may affect geometry, for example offsets or a road-specific curve setting. |
 | G4 | Node flags (except the country IDs in bits 8–23, see [SCS lane model](scs-lane-model.md)) and the 0.4–0.6 % of roads whose start direction points away from the end node by more than 60°. These are presumably very sharp curves, but this is not checked. |
 | G5 | Which items the unresolved node links refer to, presumably `.aux` items. |

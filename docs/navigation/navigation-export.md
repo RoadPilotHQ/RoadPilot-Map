@@ -151,6 +151,10 @@ Issues come after the edges. They list what is **missing** from the graph and wh
 
 The footer proves that the file was written completely. **A file without a footer is incomplete and must be rejected**, even if every line is valid. The counts must equal the counts of the header and the number of records read.
 
+## Relation to the map package
+
+Since Step 8 the [map package](../formats/map-package.md) contains this file unchanged as `navigation.jsonl`, next to a geometry file keyed by the same UIDs. This format keeps its own schema version; the package manifest records it. The limitation `curve_geometry_is_not_exported` stays true for this file (it has no curves); the curve data is in the package's geometry file, labelled as an estimate. `roadpilot-map check-package` checks that the roads and map nodes of this file exist in the geometry file with equal positions.
+
 ## Identifiers
 
 | Identifier | Type in the file | Scope |

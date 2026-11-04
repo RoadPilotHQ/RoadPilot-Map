@@ -1,0 +1,17 @@
+[package]
+name = "roadpilot-map-package"
+description = "Versioned map package of RoadPilot-Map: format, writer, validating reader and spatial index."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "roadpilot_map_package"
+
+[dependencies]
+roadpilot-map-model.workspace = true
+
+[lints]
+workspace = true

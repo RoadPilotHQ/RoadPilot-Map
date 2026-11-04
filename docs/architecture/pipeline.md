@@ -2,7 +2,7 @@
 
 This document describes the stages that turn a local ATS or ETS2 installation into a map package.
 
-> **Status: partially implemented.** Stages 2 to 4 exist in part; stages 1, 5, 6 and 7 are planned. There is no end-to-end pipeline yet: the facade does not discover installations or read archives, and no map package is written. Each stage below has a status line. The confirmed formats are documented in [`docs/formats/`](../formats/); open points are tracked in [Open questions](../open-questions.md).
+> **Status: partially implemented.** Stages 2 to 4 and 6 exist in part, stage 5 as an estimate, stage 7 for schema 1; stage 1 is planned. `roadpilot-map build-package` runs the stages end to end for an installation folder given with `--game-dir`: the facade reads the archives (`load_installation`) and writes the package. It does not discover installations. Each stage below has a status line. The confirmed formats are documented in [`docs/formats/`](../formats/); open points are tracked in [Open questions](../open-questions.md).
 
 | Stage | Status |
 |---|---|
@@ -10,9 +10,9 @@ This document describes the stages that turn a local ATS or ETS2 installation in
 | 2. Archive read | Implemented for HashFS v2 |
 | 3. Parse | Partially implemented: sector `.base` and `.data` files, prefab descriptors, road look, lane type, country, prefab model and traffic rule definitions |
 | 4. Model | Partially implemented: roads, nodes, their connections, lanes and prefabs |
-| 5. Geometry | Planned; the curve between road nodes is under investigation |
+| 5. Geometry | Partially implemented: evidence levels, an estimated road curve with length check, bounds and projection; lane positions are unavailable |
 | 6. Network | Partially implemented: road-to-road connections, candidate lane transitions, movements through junctions, a navigation graph with route search |
-| 7. Package | Planned |
+| 7. Package | Implemented for schema 1: manifest, geometry file, optional navigation file, validating reader, grid index |
 
 ## Overview
 
@@ -69,14 +69,14 @@ Each stage has a typed input and a typed output. Stages do not share hidden stat
   - **sampled polylines** at a fixed spacing, with curvature and radius per sample, for simple consumption.
 
   The exact curve representation will be decided in its own ADR.
-- **Status:** planned; the crate does not exist. The model exposes only confirmed geometry: node positions, node directions, the straight-line distance and the stored road length. The curve between two nodes is not confirmed (open question G1 in [SCS road geometry](../formats/scs-road-geometry.md)), so no interpolation, curvature or curve radius is computed.
+- **Status:** partially implemented (Step 8). `roadpilot-map-geometry` holds the evidence level of geometry ([`Quality`](../formats/map-package.md#evidence-levels): confirmed, estimated, unavailable) and `RoadCurve`, an **estimated** cubic Hermite curve per road with its length check, bounds and projection. The model itself still exposes only confirmed geometry: node positions, node directions, the straight-line distance and the stored road length. The curve is open question G1 in [SCS road geometry](../formats/scs-road-geometry.md), so it stays labelled as an estimate. Lane centre lines exist only from explicit caller assumptions (`lane_centerline`) because no lane width is stored (LM3); curvature and curve radius are not computed.
 
 ### 6. Network
 
 - **Input:** model, including the geometry results.
 - **Output:** a road graph with intersections and lane-level connections, including connections through prefabs (junctions).
 - **Crate:** `roadpilot-map-network`.
-- **Notes:** designed so a spatial index for future map matching can be added without breaking the package format.
+- **Notes:** the spatial index is built by the package reader from the road boxes (grid), so it needs no extra data in the package.
 - **Status:** partially implemented, not yet in its own crate. `RoadNetwork` resolves road-to-road connections through shared nodes in stored direction (`successor`, `predecessor`, `connections`). `LaneNetwork::transition` pairs lanes across such connections as candidates by index where both roads match. `PrefabNetwork` gives the arms of each junction (prefab instance), its stored internal movements (confirmed) and road-lane movements through it (candidates). The navigation graph (`NavigationGraph`) joins these into one directed graph with a status and origin per edge, and finds routes in two modes, `ConfirmedOnly` and `AllowCandidates` ([Navigation graph](../navigation/navigation-graph.md)). Lane transitions between directly joined prefabs and confirmed road-lane pairing are open.
 
 ### 7. Package
@@ -84,10 +84,12 @@ Each stage has a typed input and a typed output. Stages do not share hidden stat
 - **Input:** model, including the geometry and network results.
 - **Output:** a map package on disk.
 - **Crate:** `roadpilot-map-package`.
-- **Notes:** the package format and encoding will be decided in their own ADR.
-- **Status:** planned; the crate does not exist and no package is written. The navigation graph can already be written as a separate, versioned exchange file ([Navigation graph export](../navigation/navigation-export.md)); it is not the map package.
+- **Notes:** the format and versioning are decided in [ADR 0002](../adr/0002-map-package-format-and-versioning.md) and specified in [Map package](../formats/map-package.md).
+- **Status:** implemented (Step 8). `roadpilot_map::write_package` writes a package folder (manifest, geometry file, and the unchanged navigation graph export) from a loaded installation, `check_package` validates it; the CLI commands are `build-package` and `check-package`. The reader, the validation and the grid index are in `roadpilot-map-package`.
 
-## Map package (proposal)
+## Map package (early proposal, superseded)
+
+> The implemented format is specified in [Map package](../formats/map-package.md). The text below is the early proposal and is kept for its reasoning; where it differs, the specification applies. In particular the build time moved out of the manifest (`generated_at` is `null`), and `game_version` and content fingerprints are not available yet.
 
 A map package has a **manifest** and **data sections**.
 
@@ -104,7 +106,7 @@ The manifest identifies the package and its source, but contains no game content
 
 Data sections hold the road, lane and network data. A readable debug export is planned in addition to the main format.
 
-Not implemented; this section remains a proposal.
+This early proposal was replaced by the specification above.
 
 ## DLC and override handling
 
@@ -121,9 +123,9 @@ Map DLCs add or replace map content. The order in which archives are applied, an
 
 | Level | Data | Runs automatically | Status |
 |---|---|---|---|
-| Unit and integration tests per stage | Synthetic inputs built in the test code | Yes, in `cargo test` | In place for the archive reader, the sector parser and the road model |
+| Unit and integration tests per stage | Synthetic inputs built in the test code | Yes, in `cargo test` | In place for the archive reader, the sector parser, the road model, the curve estimate and the map package |
 | Pipeline tests | Synthetic installation built from fixtures in a temporary directory | Yes, in `cargo test` | Planned together with installation discovery |
-| Real installation tests | User's local game install, via `ROADPILOT_MAP_GAME_DIR` | No (opt-in, ignored by default) | In place for the sector parser and the road network |
+| Real installation tests | User's local game install, via `ROADPILOT_MAP_GAME_DIR` | No (opt-in, ignored by default) | In place for the sector parser, the road network and the map package |
 
 There is no CI workflow yet; the checks run locally before every commit.
 

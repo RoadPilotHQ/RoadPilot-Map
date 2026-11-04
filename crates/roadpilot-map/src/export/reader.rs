@@ -7,8 +7,8 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::io::{BufRead, Read};
 
-use super::json::{self, Json};
 use super::{FORMAT_NAME, SCHEMA_MAJOR};
+use roadpilot_map_package::json::{self, Json};
 
 /// Longest line the reader accepts.
 const MAX_LINE: usize = 1 << 20;

@@ -75,6 +75,16 @@ Lanes keep the order of the definition list, with index 0 for the first entry. W
 
 Template looks take their geometry from a 3D model template (`template_right`, a `.pmd` file), which is not read.
 
+### Lane geometry (Step 8)
+
+Lane positions are **unavailable**. A lane centre line needs a lane width, the lane order and the position of the road axis relative to the node curve; the data confirms none of them (LM2, LM3), and the curve itself is only estimated (G1). Therefore:
+
+- The map package marks every lane `geometry: unavailable` and `width: null` ([Map package](map-package.md)).
+- `roadpilot_map_geometry::lane_centerline` exists for callers who supply all assumptions explicitly (`LaneAssumptions`: width, order, axis offset). There are no defaults. Its result is `estimated`, never `confirmed`, and `Quality::is_suitable_for_active_steering` is false for it.
+- The stored offsets are kept as they are (`StoredLaneOffset`). They are **not** used to compute positions, because their meaning is unknown.
+
+A lane departure warning therefore needs one of: a confirmed width and lane order from the data (for example from the `.pmd` templates of the road looks, which are not read), or a different source of lane positions.
+
 ## Driving direction
 
 ### Traffic side per road

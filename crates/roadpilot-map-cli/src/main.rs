@@ -45,6 +45,8 @@ fn main() -> ExitCode {
         }
         [command, rest @ ..] if command == "export-navigation" => run_export(rest),
         [command, file] if command == "check-navigation-export" => run_check(Path::new(file)),
+        [command, rest @ ..] if command == "build-package" => run_build_package(rest),
+        [command, dir] if command == "check-package" => run_check_package(Path::new(dir)),
         [] => usage_error("no arguments given"),
         _ => usage_error(&format!("unrecognized arguments: {}", args.join(" "))),
     }
@@ -58,6 +60,10 @@ fn usage_error(message: &str) -> ExitCode {
         "       {BIN_NAME} export-navigation --game <ets2|ats> --game-dir <path> --out <file> [--force]"
     );
     eprintln!("       {BIN_NAME} check-navigation-export <file>");
+    eprintln!(
+        "       {BIN_NAME} build-package --game <ets2|ats> --game-dir <path> --out <folder> [--force] [--without-navigation]"
+    );
+    eprintln!("       {BIN_NAME} check-package <folder>");
     ExitCode::from(EXIT_USAGE)
 }
 
@@ -127,10 +133,14 @@ struct ExportArgs {
     game_dir: PathBuf,
     out: PathBuf,
     force: bool,
+    without_navigation: bool,
 }
 
-fn parse_export_args(args: &[String]) -> Result<ExportArgs, String> {
+/// Parses the options shared by `export-navigation` and `build-package`.
+/// `--without-navigation` is accepted only if `package` is true.
+fn parse_export_args(args: &[String], package: bool) -> Result<ExportArgs, String> {
     let (mut game, mut game_dir, mut out, mut force) = (None, None, None, false);
+    let mut without_navigation = false;
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
         let mut value = |name: &str| {
@@ -149,6 +159,7 @@ fn parse_export_args(args: &[String]) -> Result<ExportArgs, String> {
             "--game-dir" => game_dir = Some(PathBuf::from(value("--game-dir")?)),
             "--out" => out = Some(PathBuf::from(value("--out")?)),
             "--force" => force = true,
+            "--without-navigation" if package => without_navigation = true,
             other => return Err(format!("unrecognized argument: {other}")),
         }
     }
@@ -157,12 +168,13 @@ fn parse_export_args(args: &[String]) -> Result<ExportArgs, String> {
         game_dir: game_dir.ok_or("--game-dir is required")?,
         out: out.ok_or("--out is required")?,
         force,
+        without_navigation,
     })
 }
 
 /// Loads the navigation model of a game installation and writes the export.
 fn run_export(args: &[String]) -> ExitCode {
-    let args = match parse_export_args(args) {
+    let args = match parse_export_args(args, false) {
         Ok(a) => a,
         Err(message) => return usage_error(&message),
     };
@@ -217,6 +229,127 @@ fn run_export(args: &[String]) -> ExitCode {
             ExitCode::from(match e {
                 ExportError::Inconsistent(_) => EXIT_PROCESSING,
                 _ => EXIT_FAILURE,
+            })
+        }
+    }
+}
+
+/// Loads the models of a game installation and writes a map package folder.
+fn run_build_package(args: &[String]) -> ExitCode {
+    let args = match parse_export_args(args, true) {
+        Ok(a) => a,
+        Err(message) => return usage_error(&message),
+    };
+    // Fail early, before the slow loading, if the output cannot be used.
+    if let Err(e) = roadpilot_map::check_package_output(&args.out, args.force, Some(&args.game_dir))
+    {
+        eprintln!("error: {e}");
+        return ExitCode::from(EXIT_FAILURE);
+    }
+    let started = Instant::now();
+    let model = match load_installation(&args.game_dir, args.game) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return ExitCode::from(match e {
+                InstallationError::NotRecognized(_) => EXIT_INSTALLATION,
+                _ => EXIT_PROCESSING,
+            });
+        }
+    };
+    println!(
+        "Loaded {}: {} nodes, {} edges in {:.1} s ({} archives read, {} skipped)",
+        args.game.id(),
+        model.graph.node_count(),
+        model.graph.edge_count(),
+        started.elapsed().as_secs_f64(),
+        model.archives.len(),
+        model.skipped_archives
+    );
+    let started = Instant::now();
+    let meta = ExportMetadata::for_installation(&model);
+    let options = roadpilot_map::PackageOptions {
+        include_navigation: !args.without_navigation,
+        overwrite: args.force,
+    };
+    match roadpilot_map::write_package(&args.out, Some(&args.game_dir), &model, &meta, options) {
+        Ok(stats) => {
+            let c = stats.counts;
+            println!(
+                "Wrote {}: {} nodes, {} roads, {} lanes, {} junctions, {} connections in {:.1} s",
+                args.out.display(),
+                c.nodes,
+                c.roads,
+                c.lanes,
+                c.junctions,
+                c.connections,
+                started.elapsed().as_secs_f64()
+            );
+            println!(
+                "Road curves: {} estimated, of which {} match the stored length within {:.1} %",
+                stats.roads_with_curve,
+                stats.roads_length_consistent,
+                roadpilot_map::geometry::LENGTH_TOLERANCE * 100.0
+            );
+            println!(
+                "Content id: {:x}. The package is derived from game data for local use only; do not share it.",
+                stats.content_id
+            );
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::from(match e {
+                roadpilot_map::PackageWriteError::Inconsistent(_) => EXIT_PROCESSING,
+                _ => EXIT_FAILURE,
+            })
+        }
+    }
+}
+
+/// Checks a package folder against the specification.
+fn run_check_package(dir: &Path) -> ExitCode {
+    match roadpilot_map::check_package(dir) {
+        Ok(summary) => {
+            let m = &summary.manifest;
+            println!(
+                "Valid map package: game {}, schema {}.{}, content revision {}, generator {} {}",
+                m.game,
+                m.schema_major,
+                m.schema_minor,
+                m.content_revision,
+                m.generator_name,
+                m.generator_version
+            );
+            println!(
+                "Nodes: {}, roads: {}, lanes: {}, junctions: {}, connections: {}",
+                m.counts.nodes,
+                m.counts.roads,
+                m.counts.lanes,
+                m.counts.junctions,
+                m.counts.connections
+            );
+            println!(
+                "Road curves (estimated): {}, matching the stored length: {}",
+                summary.roads_with_estimated_curve, summary.roads_length_consistent
+            );
+            match &summary.navigation {
+                Some(nav) => println!(
+                    "Navigation graph: {} nodes, {} edges, {} issues",
+                    nav.header.nodes, nav.header.edges, nav.header.issues
+                ),
+                None => println!("Navigation graph: not included"),
+            }
+            println!("Limitations: {}", m.limitations.join(", "));
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::from(match &e {
+                roadpilot_map::PackageCheckError::Package(
+                    roadpilot_map::map_package::PackageError::Io(_),
+                ) => EXIT_FAILURE,
+                _ => EXIT_PROCESSING,
             })
         }
     }

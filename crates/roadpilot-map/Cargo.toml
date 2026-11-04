@@ -13,7 +13,9 @@ name = "roadpilot_map"
 [dependencies]
 roadpilot-map-archive.workspace = true
 roadpilot-map-formats.workspace = true
+roadpilot-map-geometry.workspace = true
 roadpilot-map-model.workspace = true
+roadpilot-map-package.workspace = true
 
 [lints]
 workspace = true
