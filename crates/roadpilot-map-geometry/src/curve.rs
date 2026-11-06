@@ -303,9 +303,10 @@ impl RoadCurve {
     }
 
     /// The point of the estimated curve closest to `position`, measured
-    /// horizontally (X/Z). A coarse search over 64 samples is refined by
-    /// interval halving; for curves with several local minima the result is
-    /// the best of the coarse samples' neighbourhoods.
+    /// horizontally (X/Z). Every local minimum detected in a coarse search
+    /// over 64 samples is refined by interval halving; the best refined
+    /// minimum and both endpoints are compared. A minimum narrower than the
+    /// sample spacing can still be missed.
     #[must_use]
     pub fn project(&self, position: [f64; 3]) -> CurveProjection {
         let horizontal = |t: f64| {
@@ -313,38 +314,41 @@ impl RoadCurve {
             let (dx, dz) = (p[0] - position[0], p[2] - position[2]);
             dx * dx + dz * dz
         };
-        let mut best = 0usize;
-        let mut best_d = f64::INFINITY;
-        for i in 0..=PROJECT_SAMPLES {
-            let d = horizontal(i as f64 / PROJECT_SAMPLES as f64);
-            if d < best_d {
-                best_d = d;
-                best = i;
-            }
-        }
         let step = 1.0 / PROJECT_SAMPLES as f64;
-        let mut lo = (best as f64 * step - step).max(0.0);
-        let mut hi = (best as f64 * step + step).min(1.0);
-        for _ in 0..40 {
-            let third = (hi - lo) / 3.0;
-            let (a, b) = (lo + third, hi - third);
-            if horizontal(a) < horizontal(b) {
-                hi = b;
-            } else {
-                lo = a;
+        let distances: Vec<_> = (0..=PROJECT_SAMPLES)
+            .map(|i| horizontal(i as f64 * step))
+            .collect();
+        let mut best_t = 0.0;
+        let mut best_d = distances[0];
+        if distances[PROJECT_SAMPLES] < best_d {
+            best_t = 1.0;
+            best_d = distances[PROJECT_SAMPLES];
+        }
+
+        for i in 1..PROJECT_SAMPLES {
+            if distances[i] <= distances[i - 1] && distances[i] <= distances[i + 1] {
+                let mut lo = (i - 1) as f64 * step;
+                let mut hi = (i + 1) as f64 * step;
+                for _ in 0..40 {
+                    let third = (hi - lo) / 3.0;
+                    let (a, b) = (lo + third, hi - third);
+                    if horizontal(a) < horizontal(b) {
+                        hi = b;
+                    } else {
+                        lo = a;
+                    }
+                }
+                let t = 0.5 * (lo + hi);
+                let d = horizontal(t);
+                if d < best_d {
+                    best_t = t;
+                    best_d = d;
+                }
             }
         }
-        let t = 0.5 * (lo + hi);
-        let point = self.point(t);
-        // Never return something worse than the coarse sample itself.
-        let (t, point) = if horizontal(t) <= best_d {
-            (t, point)
-        } else {
-            let tb = best as f64 * step;
-            (tb, self.point(tb))
-        };
+        let point = self.point(best_t);
         CurveProjection {
-            t,
+            t: best_t,
             point,
             distance: ((point[0] - position[0]).powi(2) + (point[2] - position[2]).powi(2)).sqrt(),
         }
@@ -495,6 +499,23 @@ mod tests {
         let p = c.project([0.0, 0.0, 20.0]);
         assert_eq!(p.t, 0.0);
         assert!((p.distance - 20.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn projection_checks_each_detected_local_minimum() {
+        // This sharp estimated curve has two nearby branches. Refining only
+        // the globally best coarse sample finds the farther branch at t≈0.61.
+        let g = geometry(
+            [0.0; 3],
+            [-17.99573542084545, 0.0, -27.894585486501455],
+            [-0.7097133929359719, 0.0, -0.7044905250514806],
+            [0.3022068907645595, 0.0, 0.9532423590957431],
+            63.82884082330989,
+        );
+        let c = RoadCurve::estimate(&g).expect("valid");
+        let p = c.project([-19.067755108699203, 0.0, -31.465510255657136]);
+        assert!(p.t > 0.9, "expected the nearer branch, got {p:?}");
+        assert!(p.distance < 0.08, "expected the nearer branch, got {p:?}");
     }
 
     #[test]
